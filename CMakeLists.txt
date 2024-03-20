@@ -46,6 +46,8 @@ set(CPP_SOURCE
         ThirdParty/imgui-1.90.4/imgui_widgets.cpp
 
         src/UI/Application.cpp
+        src/Graphics/GraphicsDevice.cpp
+
 )
 
 add_executable(${PROJECT_NAME} ${CPP_HEADER} ${CPP_SOURCE})

@@ -30,6 +30,7 @@ void Application::initializeWindow() {
 void Application::initializeVulkan() {
     createVulkanInstance();
     setupDebugCallback();
+
 }
 
 void Application::startMainLoop() {

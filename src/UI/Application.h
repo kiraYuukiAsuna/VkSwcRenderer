@@ -14,6 +14,7 @@
 #include <vk_mem_alloc.h>
 
 #include "Util/Logger/Log.h"
+#include "Graphics/GraphicsDevice.h"
 
 class Application {
 public:
@@ -31,6 +32,16 @@ public:
     Application &operator=(Application &&) = delete;
 
     void run();
+
+#ifdef NDEBUG
+    const bool m_EnableValidationLayers = false;
+#else
+    const bool m_EnableValidationLayers = true;
+#endif
+
+    const std::vector<const char *> m_ValidationLayers = {
+            "VK_LAYER_KHRONOS_validation"
+    };
 
 private:
 
@@ -73,14 +84,6 @@ private:
 
     VkDebugUtilsMessengerEXT m_DebugUtilsCallback;
 
-    const std::vector<const char *> m_ValidationLayers = {
-            "VK_LAYER_KHRONOS_validation"
-    };
-
-#ifdef NDEBUG
-    const bool m_EnableValidationLayers = false;
-#else
-    const bool m_EnableValidationLayers = true;
-#endif
+    GraphicsDevice m_GraphicsDevice;
 
 };
