@@ -10,14 +10,26 @@ include_directories(
         ThirdParty/glm/include
         ThirdParty/VulkanMemoryAllocator/include
         ThirdParty/spdlog/include
+        ThirdParty/imgui-1.90.4
         ~/SDK/vulkan/1.3.275.0/x86_64/include
+        C:/VulkanSDK/1.3.275.0/Include
         src
 )
 
-link_directories(
-        ThirdParty/glfw/lib/linux
-        ~/SDK/vulkan/1.3.275.0/x86_64/lib
-)
+if (WIN32)
+    link_directories(
+            ThirdParty/glfw/lib/windows
+            C:/VulkanSDK/1.3.275.0/Lib
+    )
+elseif (UNIX AND NOT APPLE)
+    link_directories(
+            ThirdParty/glfw/lib/linux
+            ~/SDK/vulkan/1.3.275.0/x86_64/lib
+    )
+elseif (APPLE)
+
+endif ()
+
 
 set(CPP_HEADER
 
@@ -27,19 +39,27 @@ set(CPP_SOURCE
         main.cpp
 
         src/Util/Logger/Log.cpp
+        ThirdParty/imgui-1.90.4/imgui.cpp
+        ThirdParty/imgui-1.90.4/imgui_draw.cpp
+        ThirdParty/imgui-1.90.4/imgui_demo.cpp
+        ThirdParty/imgui-1.90.4/imgui_tables.cpp
+        ThirdParty/imgui-1.90.4/imgui_widgets.cpp
+
+        src/UI/Application.cpp
 )
-
-if (WIN32)
-
-elseif (UNIX AND NOT APPLE)
-
-elseif (APPLE)
-
-endif ()
 
 add_executable(${PROJECT_NAME} ${CPP_HEADER} ${CPP_SOURCE})
 
-target_link_libraries(${PROJECT_NAME}
-        glfw3
-        vulkan
-)
+if (WIN32)
+    target_link_libraries(${PROJECT_NAME}
+            glfw3
+            vulkan-1.lib
+    )
+elseif (UNIX AND NOT APPLE)
+    target_link_libraries(${PROJECT_NAME}
+            glfw3
+            vulkan
+    )
+elseif (APPLE)
+
+endif ()

@@ -9,5 +9,6 @@ int main() {
         SEELE_ERROR(__func__, "{}", e.what());
         return -1;
     }
+
     return 0;
 }
