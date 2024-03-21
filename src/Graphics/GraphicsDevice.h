@@ -7,7 +7,7 @@ class Application;
 
 class GraphicsDevice {
 public:
-    GraphicsDevice(Application *application);
+    GraphicsDevice(Application* application);
 
     ~GraphicsDevice();
 
@@ -17,29 +17,33 @@ public:
 
     void createLogicalDevice();
 
-private:
-    Application *m_Application;
-
-    VkInstance m_VkInstance;
+    void cleanup();
 
     vk::PhysicalDevice m_PhysicalDevice;
-
     vk::Device m_Device;
-
-    vk::Queue m_GraphicsQueue;
 
     struct QueueFamilyIndices {
         int graphicsFamily = -1;
+        int presentFamily = -1;
 
         bool isComplete() {
-            return graphicsFamily >= 0;
+            return graphicsFamily >= 0 && presentFamily >= 0;
         }
     };
+
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+
+private:
+    Application* m_Application;
+
+    VkInstance m_VkInstance;
+
+
+    vk::Queue m_GraphicsQueue;
+    vk::Queue m_PresentQueue;
 
     bool isDeviceSuitable(VkPhysicalDevice device);
 
     void rateDeviceSuitability(VkPhysicalDevice device);
-
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
 };

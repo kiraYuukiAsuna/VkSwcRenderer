@@ -15,6 +15,8 @@
 
 #include "Util/Logger/Log.h"
 #include "Graphics/GraphicsDevice.h"
+#include "Graphics/WindowSurface.h"
+#include "Graphics/SwapChain.h"
 
 class Application {
 public:
@@ -32,6 +34,12 @@ public:
     Application &operator=(Application &&) = delete;
 
     void run();
+
+
+    GraphicsDevice m_GraphicsDevice;
+    WindowSurface m_WindowSurface;
+    SwapChain m_SwapChain;
+    GLFWwindow *m_GLFWwindow;
 
 #ifdef NDEBUG
     const bool m_EnableValidationLayers = false;
@@ -52,8 +60,6 @@ private:
     void initializeVulkan();
 
     void startMainLoop();
-
-    void cleanup();
 
     void createVulkanInstance();
 
@@ -78,12 +84,10 @@ private:
 
     int m_WindowWidth{1200};
     int m_WindowHeight{800};
-    GLFWwindow *m_GLFWwindow;
 
     VkInstance m_VkInstance;
 
     VkDebugUtilsMessengerEXT m_DebugUtilsCallback;
 
-    GraphicsDevice m_GraphicsDevice;
 
 };

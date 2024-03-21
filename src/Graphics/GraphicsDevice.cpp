@@ -1,5 +1,6 @@
 #include "GraphicsDevice.h"
 #include "UI/Application.h"
+#include <set>
 
 GraphicsDevice::GraphicsDevice(Application *application) : m_Application(application) {
 
@@ -7,6 +8,10 @@ GraphicsDevice::GraphicsDevice(Application *application) : m_Application(applica
 
 void GraphicsDevice::setVkInstance(VkInstance vkInstance) {
     m_VkInstance = vkInstance;
+}
+
+GraphicsDevice::~GraphicsDevice() {
+
 }
 
 void GraphicsDevice::pickPhysicalDevice() {
@@ -33,16 +38,24 @@ void GraphicsDevice::pickPhysicalDevice() {
 }
 
 bool GraphicsDevice::isDeviceSuitable(VkPhysicalDevice device) {
-//    VkPhysicalDeviceProperties deviceProperties;
-//    VkPhysicalDeviceFeatures deviceFeatures;
-//    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-//    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-//
-//    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-//           deviceFeatures.geometryShader;
+    VkPhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
     QueueFamilyIndices indices = findQueueFamilies(device);
 
-    return indices.isComplete();
+    bool extensionsSupported = m_Application->m_SwapChain.checkDeviceExtensionSupport(device);
+
+    bool swapChainAdequate = false;
+    if (extensionsSupported) {
+        SwapChainSupportDetails swapChainSupport = m_Application->m_SwapChain.querySwapChainSupport(device,
+                                                                                                    m_Application->m_WindowSurface.m_Surface);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
+
+    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+           deviceFeatures.geometryShader && indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
 void GraphicsDevice::rateDeviceSuitability(VkPhysicalDevice device) {
@@ -65,6 +78,13 @@ GraphicsDevice::QueueFamilyIndices GraphicsDevice::findQueueFamilies(VkPhysicalD
             indices.graphicsFamily = i;
         }
 
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(device, i, m_Application->m_WindowSurface.m_Surface, &presentSupport);
+
+        if (queueFamily.queueCount > 0 && presentSupport) {
+            indices.presentFamily = i;
+        }
+
         if (indices.isComplete()) {
             break;
         }
@@ -79,20 +99,29 @@ GraphicsDevice::QueueFamilyIndices GraphicsDevice::findQueueFamilies(VkPhysicalD
 void GraphicsDevice::createLogicalDevice() {
     QueueFamilyIndices indices = findQueueFamilies(m_PhysicalDevice);
 
-    vk::DeviceQueueCreateInfo queueCreateInfo{};
-    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily;
-    queueCreateInfo.queueCount = 1;
+    std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
+
+    std::set<int> uniqueQueueFamilies = {indices.graphicsFamily, indices.presentFamily};
+
     float queuePriority = 1.0f;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
-    queueCreateInfo.pNext = nullptr;
+
+    for (int queueFamily: uniqueQueueFamilies) {
+        vk::DeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfo.pNext = nullptr;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
 
     vk::PhysicalDeviceFeatures deviceFeatures{};
 
     vk::DeviceCreateInfo createInfo{};
-    createInfo.queueCreateInfoCount = 1;
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(m_Application->m_SwapChain.m_DeviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = m_Application->m_SwapChain.m_DeviceExtensions.data();
 
     if (m_Application->m_EnableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(m_Application->m_ValidationLayers.size());
@@ -104,10 +133,12 @@ void GraphicsDevice::createLogicalDevice() {
     m_Device = m_PhysicalDevice.createDevice(createInfo);
 
     m_GraphicsQueue = m_Device.getQueue(indices.graphicsFamily, 0);
+    m_PresentQueue = m_Device.getQueue(indices.presentFamily, 0);
 }
 
-GraphicsDevice::~GraphicsDevice() {
+void GraphicsDevice::cleanup() {
     m_Device.destroy();
 }
+
 
 

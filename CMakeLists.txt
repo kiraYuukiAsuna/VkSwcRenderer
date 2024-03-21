@@ -47,6 +47,8 @@ set(CPP_SOURCE
 
         src/UI/Application.cpp
         src/Graphics/GraphicsDevice.cpp
+        src/Graphics/WindowSurface.cpp
+        src/Graphics/SwapChain.cpp
 
 )
 
