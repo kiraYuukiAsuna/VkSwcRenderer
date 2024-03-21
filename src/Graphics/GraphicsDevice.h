@@ -1,10 +1,13 @@
 #pragma once
 
-#include "UI/Application.h"
+#include <vulkan/vulkan.hpp>
+#include <Util/Logger/Log.h>
+
+class Application;
 
 class GraphicsDevice {
 public:
-    GraphicsDevice(Application& application);
+    GraphicsDevice(Application *application);
 
     ~GraphicsDevice();
 
@@ -12,8 +15,10 @@ public:
 
     void pickPhysicalDevice();
 
+    void createLogicalDevice();
+
 private:
-    Application& m_Application;
+    Application *m_Application;
 
     VkInstance m_VkInstance;
 
@@ -37,5 +42,4 @@ private:
 
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
-    void createLogicalDevice();
 };

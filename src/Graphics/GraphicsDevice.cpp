@@ -1,6 +1,7 @@
 #include "GraphicsDevice.h"
+#include "UI/Application.h"
 
-GraphicsDevice::GraphicsDevice(Application &application) : m_Application(application) {
+GraphicsDevice::GraphicsDevice(Application *application) : m_Application(application) {
 
 }
 
@@ -93,9 +94,9 @@ void GraphicsDevice::createLogicalDevice() {
     createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.enabledExtensionCount = 0;
 
-    if (m_Application.m_EnableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(m_Application.m_ValidationLayers.size());
-        createInfo.ppEnabledLayerNames = m_Application.m_ValidationLayers.data();
+    if (m_Application->m_EnableValidationLayers) {
+        createInfo.enabledLayerCount = static_cast<uint32_t>(m_Application->m_ValidationLayers.size());
+        createInfo.ppEnabledLayerNames = m_Application->m_ValidationLayers.data();
     } else {
         createInfo.enabledLayerCount = 0;
     }

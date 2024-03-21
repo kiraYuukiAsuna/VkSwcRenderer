@@ -1,7 +1,7 @@
 #include "Application.h"
 
 
-Application::Application() {
+Application::Application() : m_GraphicsDevice(this){
 
 }
 
@@ -30,7 +30,9 @@ void Application::initializeWindow() {
 void Application::initializeVulkan() {
     createVulkanInstance();
     setupDebugCallback();
-
+    m_GraphicsDevice.setVkInstance(m_VkInstance);
+    m_GraphicsDevice.pickPhysicalDevice();
+    m_GraphicsDevice.createLogicalDevice();
 }
 
 void Application::startMainLoop() {
