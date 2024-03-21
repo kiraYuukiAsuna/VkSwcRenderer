@@ -1,12 +1,25 @@
 #include "Application.h"
 
 
-Application::Application() {
+Application::Application() : m_GraphicsDevice(this), m_WindowSurface(this), m_SwapChain(this) {
 
 }
 
 Application::~Application() {
+    m_SwapChain.cleanup();
+    m_GraphicsDevice.cleanup();
 
+    if (m_EnableValidationLayers) {
+        DestoryDebugUtilsMessengerEXT(m_VkInstance, m_DebugUtilsCallback, nullptr);
+    }
+
+    m_WindowSurface.cleanup();
+
+    vkDestroyInstance(m_VkInstance, nullptr);
+
+    glfwDestroyWindow(m_GLFWwindow);
+
+    glfwTerminate();
 }
 
 void Application::run() {
@@ -14,7 +27,6 @@ void Application::run() {
     initializeWindow();
     initializeVulkan();
     startMainLoop();
-    cleanup();
 }
 
 void Application::initializeLogger() {
@@ -31,24 +43,20 @@ void Application::initializeVulkan() {
     createVulkanInstance();
     setupDebugCallback();
 
+    m_WindowSurface.setVkInstance(m_VkInstance);
+    m_WindowSurface.createSurface(m_GLFWwindow);
+
+    m_GraphicsDevice.setVkInstance(m_VkInstance);
+    m_GraphicsDevice.pickPhysicalDevice();
+    m_GraphicsDevice.createLogicalDevice();
+
+    m_SwapChain.createSwapChain();
 }
 
 void Application::startMainLoop() {
     while (!glfwWindowShouldClose(m_GLFWwindow)) {
         glfwPollEvents();
     }
-}
-
-void Application::cleanup() {
-    if (m_EnableValidationLayers) {
-        DestoryDebugUtilsMessengerEXT(m_VkInstance, m_DebugUtilsCallback, nullptr);
-    }
-
-    vkDestroyInstance(m_VkInstance, nullptr);
-
-    glfwDestroyWindow(m_GLFWwindow);
-
-    glfwTerminate();
 }
 
 void Application::createVulkanInstance() {
