@@ -49,6 +49,8 @@ set(CPP_SOURCE
         src/Graphics/GraphicsDevice.cpp
         src/Graphics/WindowSurface.cpp
         src/Graphics/SwapChain.cpp
+        src/Graphics/GraphicsPipeline.cpp
+        src/Graphics/ShaderCode.cpp
 
 )
 

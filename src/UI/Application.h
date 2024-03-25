@@ -17,6 +17,7 @@
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/WindowSurface.h"
 #include "Graphics/SwapChain.h"
+#include "Graphics/GraphicsPipeline.h"
 
 class Application {
 public:
@@ -39,6 +40,7 @@ public:
     GraphicsDevice m_GraphicsDevice;
     WindowSurface m_WindowSurface;
     SwapChain m_SwapChain;
+    GraphicsPipeline m_GraphicsPipeline;
     GLFWwindow *m_GLFWwindow;
 
 #ifdef NDEBUG

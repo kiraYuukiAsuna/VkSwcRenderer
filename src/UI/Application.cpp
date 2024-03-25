@@ -1,11 +1,13 @@
 #include "Application.h"
 
 
-Application::Application() : m_GraphicsDevice(this), m_WindowSurface(this), m_SwapChain(this) {
+Application::Application() : m_GraphicsDevice(this), m_WindowSurface(this), m_SwapChain(this),
+                             m_GraphicsPipeline(this) {
 
 }
 
 Application::~Application() {
+    m_GraphicsPipeline.cleanup();
     m_SwapChain.cleanup();
     m_GraphicsDevice.cleanup();
 
@@ -51,6 +53,8 @@ void Application::initializeVulkan() {
     m_GraphicsDevice.createLogicalDevice();
 
     m_SwapChain.createSwapChain();
+
+    m_GraphicsPipeline.create();
 }
 
 void Application::startMainLoop() {
