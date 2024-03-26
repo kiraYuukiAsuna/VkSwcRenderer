@@ -54,8 +54,8 @@ bool GraphicsDevice::isDeviceSuitable(VkPhysicalDevice device) {
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
 
-    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
-           deviceFeatures.geometryShader && indices.isComplete() && extensionsSupported && swapChainAdequate;
+//    return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
+    return deviceFeatures.geometryShader && indices.isComplete() && extensionsSupported && swapChainAdequate;
 }
 
 void GraphicsDevice::rateDeviceSuitability(VkPhysicalDevice device) {

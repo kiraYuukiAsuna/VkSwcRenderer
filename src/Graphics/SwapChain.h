@@ -27,6 +27,10 @@ public:
 
     void createSwapChain();
 
+    void createImageViews();
+
+    void createFramebuffers();
+
     void cleanup();
 
     const std::vector<const char *> m_DeviceExtensions = {
@@ -36,9 +40,11 @@ public:
     vk::SwapchainKHR m_SwapChain;
 
     std::vector<vk::Image> m_SwapChainImages;
-
+    std::vector<vk::ImageView> m_SwapChainImageViews;
     vk::Format m_SwapChainImageFormat;
     vk::Extent2D m_SwapChainExtent;
+    std::vector<vk::Framebuffer> m_SwapChainFramebuffers;
+
 
 private:
     Application *m_Application;

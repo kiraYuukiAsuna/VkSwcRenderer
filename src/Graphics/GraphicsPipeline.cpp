@@ -120,10 +120,78 @@ void GraphicsPipeline::create() {
         SEELE_ERROR_TAG(__func__, "Create Pipeline Layout Failed!");
     }
 
+    vk::GraphicsPipelineCreateInfo pipelineCreateInfo;
+    pipelineCreateInfo.stageCount = 2;
+    pipelineCreateInfo.pStages = shaderStages;
+    pipelineCreateInfo.pVertexInputState = &vertexInputInfo;
+    pipelineCreateInfo.pInputAssemblyState = &assemblyStateCreateInfo;
+    pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
+    pipelineCreateInfo.pRasterizationState = &rasterizationStateCreateInfo;
+    pipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
+    pipelineCreateInfo.pDepthStencilState = nullptr;
+    pipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
+    pipelineCreateInfo.pDynamicState = nullptr;
+    pipelineCreateInfo.layout = m_PipelineLayout;
+    pipelineCreateInfo.renderPass = m_RenderPass;
+    pipelineCreateInfo.subpass = 0;
+    pipelineCreateInfo.basePipelineHandle = nullptr;
+    pipelineCreateInfo.basePipelineIndex = -1;
+
+    if (m_Application->m_GraphicsDevice.m_Device.createGraphicsPipelines(nullptr, 1, &pipelineCreateInfo, nullptr,
+                                                                         &m_GraphicsPipeline) != vk::Result::eSuccess) {
+        SEELE_ERROR_TAG(__func__, "Create Graphics Pipeline Failed!");
+    }
+
     m_Application->m_GraphicsDevice.m_Device.destroyShaderModule(vertShaderModule);
     m_Application->m_GraphicsDevice.m_Device.destroyShaderModule(fragShaderModule);
 }
 
 void GraphicsPipeline::cleanup() {
     m_Application->m_GraphicsDevice.m_Device.destroyPipelineLayout(m_PipelineLayout, nullptr);
+    m_Application->m_GraphicsDevice.m_Device.destroyRenderPass(m_RenderPass, nullptr);
+    m_Application->m_GraphicsDevice.m_Device.destroyPipeline(m_GraphicsPipeline, nullptr);
+}
+
+void GraphicsPipeline::createRenderPass() {
+    vk::AttachmentDescription attachmentDescription;
+    attachmentDescription.format = m_Application->m_SwapChain.m_SwapChainImageFormat;
+    attachmentDescription.samples = vk::SampleCountFlagBits::e1;
+    attachmentDescription.loadOp = vk::AttachmentLoadOp::eClear;
+    attachmentDescription.storeOp = vk::AttachmentStoreOp::eStore;
+    attachmentDescription.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+    attachmentDescription.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+    attachmentDescription.initialLayout = vk::ImageLayout::eUndefined;
+    attachmentDescription.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+    vk::AttachmentReference colorAttachmentRef;
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+    vk::SubpassDescription subpassDescription;
+    subpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+    subpassDescription.colorAttachmentCount = 1;
+    subpassDescription.pColorAttachments = &colorAttachmentRef;
+
+    vk::RenderPassCreateInfo renderPassCreateInfo;
+    renderPassCreateInfo.attachmentCount = 1;
+    renderPassCreateInfo.pAttachments = &attachmentDescription;
+    renderPassCreateInfo.subpassCount = 1;
+    renderPassCreateInfo.pSubpasses = &subpassDescription;
+
+    vk::SubpassDependency subpassDependency;
+    subpassDependency.srcSubpass = vk::SubpassExternal;
+    subpassDependency.dstSubpass = 0;
+    subpassDependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    subpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    subpassDependency.dstAccessMask =
+            vk::AccessFlagBits::eColorAttachmentRead | vk::AccessFlagBits::eColorAttachmentWrite;
+
+    renderPassCreateInfo.dependencyCount = 1;
+    renderPassCreateInfo.pDependencies = &subpassDependency;
+
+    if (m_Application->m_GraphicsDevice.m_Device.createRenderPass(&renderPassCreateInfo, nullptr, &m_RenderPass) !=
+        vk::Result::eSuccess) {
+        SEELE_ERROR_TAG(__func__, "Create Render Pass Failed!");
+    }
+
 }

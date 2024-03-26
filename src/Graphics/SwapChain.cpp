@@ -34,7 +34,7 @@ SwapChainSupportDetails SwapChain::querySwapChainSupport(vk::PhysicalDevice devi
 
     uint32_t formatCount;
 
-    details.formats  = device.getSurfaceFormatsKHR(surface);
+    details.formats = device.getSurfaceFormatsKHR(surface);
     details.presentModes = device.getSurfacePresentModesKHR(surface);
 
     return details;
@@ -146,4 +146,59 @@ void SwapChain::createSwapChain() {
 
 void SwapChain::cleanup() {
     vkDestroySwapchainKHR(m_Application->m_GraphicsDevice.m_Device, m_SwapChain, nullptr);
+    for (auto framebuffer: m_SwapChainFramebuffers) {
+        vkDestroyFramebuffer(m_Application->m_GraphicsDevice.m_Device, framebuffer, nullptr);
+    }
+    for (auto imageView: m_SwapChainImageViews) {
+        vkDestroyImageView(m_Application->m_GraphicsDevice.m_Device, imageView, nullptr);
+    }
+}
+
+void SwapChain::createFramebuffers() {
+    m_SwapChainFramebuffers.resize(m_SwapChainImages.size());
+
+    for (size_t i = 0; i < m_SwapChainImages.size(); i++) {
+        vk::ImageView attachments[] = {
+                m_SwapChainImageViews[i]
+        };
+
+        vk::FramebufferCreateInfo framebufferInfo;
+        framebufferInfo.renderPass = m_Application->m_GraphicsPipeline.m_RenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = m_SwapChainExtent.width;
+        framebufferInfo.height = m_SwapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if (m_Application->m_GraphicsDevice.m_Device.createFramebuffer(&framebufferInfo, nullptr,
+                                                                       &m_SwapChainFramebuffers[i]) !=
+            vk::Result::eSuccess) {
+            throw std::runtime_error("Failed to create framebuffer!");
+        }
+    }
+}
+
+void SwapChain::createImageViews() {
+    m_SwapChainImageViews.resize(m_SwapChainImages.size());
+
+    for (size_t i = 0; i < m_SwapChainImages.size(); i++) {
+        vk::ImageViewCreateInfo createInfo;
+        createInfo.image = m_SwapChainImages[i];
+        createInfo.viewType = vk::ImageViewType::e2D;
+        createInfo.format = m_SwapChainImageFormat;
+        createInfo.components.r = vk::ComponentSwizzle::eIdentity;
+        createInfo.components.g = vk::ComponentSwizzle::eIdentity;
+        createInfo.components.b = vk::ComponentSwizzle::eIdentity;
+        createInfo.components.a = vk::ComponentSwizzle::eIdentity;
+        createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+
+        if (m_Application->m_GraphicsDevice.m_Device.createImageView(&createInfo, nullptr, &m_SwapChainImageViews[i]) !=
+            vk::Result::eSuccess) {
+            throw std::runtime_error("Failed to create image views!");
+        }
+    }
 }

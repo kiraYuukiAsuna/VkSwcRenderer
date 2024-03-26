@@ -18,6 +18,7 @@
 #include "Graphics/WindowSurface.h"
 #include "Graphics/SwapChain.h"
 #include "Graphics/GraphicsPipeline.h"
+#include "Graphics/CommandBuffer.h"
 
 class Application {
 public:
@@ -36,12 +37,20 @@ public:
 
     void run();
 
+    void drawFrame();
+
+    void createSemaphores();
 
     GraphicsDevice m_GraphicsDevice;
     WindowSurface m_WindowSurface;
     SwapChain m_SwapChain;
     GraphicsPipeline m_GraphicsPipeline;
+    CommandBuffer m_CommandBuffer;
     GLFWwindow *m_GLFWwindow;
+
+    vk::Semaphore m_ImageAvailableSemaphore;
+    vk::Semaphore m_RenderFinishedSemaphore;
+
 
 #ifdef NDEBUG
     const bool m_EnableValidationLayers = false;

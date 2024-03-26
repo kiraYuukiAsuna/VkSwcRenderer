@@ -13,8 +13,12 @@ public:
 
     void create();
 
+    void createRenderPass();
+
     void cleanup();
 
+    vk::RenderPass m_RenderPass;
+    vk::Pipeline m_GraphicsPipeline;
 private:
     Application *m_Application;
 

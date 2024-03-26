@@ -51,7 +51,7 @@ set(CPP_SOURCE
         src/Graphics/SwapChain.cpp
         src/Graphics/GraphicsPipeline.cpp
         src/Graphics/ShaderCode.cpp
-
+        src/Graphics/CommandBuffer.cpp
 )
 
 add_executable(${PROJECT_NAME} ${CPP_HEADER} ${CPP_SOURCE})

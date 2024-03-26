@@ -7,7 +7,7 @@ class Application;
 
 class GraphicsDevice {
 public:
-    GraphicsDevice(Application* application);
+    GraphicsDevice(Application *application);
 
     ~GraphicsDevice();
 
@@ -21,6 +21,8 @@ public:
 
     vk::PhysicalDevice m_PhysicalDevice;
     vk::Device m_Device;
+    vk::Queue m_GraphicsQueue;
+    vk::Queue m_PresentQueue;
 
     struct QueueFamilyIndices {
         int graphicsFamily = -1;
@@ -34,13 +36,9 @@ public:
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
 private:
-    Application* m_Application;
+    Application *m_Application;
 
     VkInstance m_VkInstance;
-
-
-    vk::Queue m_GraphicsQueue;
-    vk::Queue m_PresentQueue;
 
     bool isDeviceSuitable(VkPhysicalDevice device);
 
