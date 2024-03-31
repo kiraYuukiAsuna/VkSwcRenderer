@@ -7,8 +7,12 @@ Application::Application() : m_GraphicsDevice(this), m_WindowSurface(this), m_Sw
 }
 
 Application::~Application() {
-    m_GraphicsDevice.m_Device.destroy(m_ImageAvailableSemaphore);
-    m_GraphicsDevice.m_Device.destroy(m_RenderFinishedSemaphore);
+    for (int i = 0; i < MaxFramesInFlight; i++) {
+        m_GraphicsDevice.m_Device.destroySemaphore(m_ImageAvailableSemaphores[i], nullptr);
+        m_GraphicsDevice.m_Device.destroySemaphore(m_RenderFinishedSemaphores[i], nullptr);
+        m_GraphicsDevice.m_Device.destroyFence(m_InFlightFences[i], nullptr);
+    }
+
     m_CommandBuffer.cleanup();
     m_GraphicsPipeline.cleanup();
     m_SwapChain.cleanup();
@@ -66,7 +70,7 @@ void Application::initializeVulkan() {
     m_CommandBuffer.CreateCommandPool();
     m_CommandBuffer.createCommandBuffers();
 
-    createSemaphores();
+    createSyncObjects();
 }
 
 void Application::startMainLoop() {
@@ -238,17 +242,20 @@ VkBool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messa
 }
 
 void Application::drawFrame() {
+    m_GraphicsDevice.m_Device.waitForFences(1, &m_InFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    m_GraphicsDevice.m_Device.resetFences(1, &m_InFlightFences[currentFrame]);
+
     uint32_t imageIndex;
     m_GraphicsDevice.m_Device.acquireNextImageKHR(m_SwapChain.m_SwapChain, UINT64_MAX,
-                                                  m_ImageAvailableSemaphore, nullptr, &imageIndex);
+                                                  m_ImageAvailableSemaphores[currentFrame], nullptr, &imageIndex);
 
     m_CommandBuffer.recordCommandBuffers(imageIndex);
 
 
     vk::SubmitInfo submitInfo;
-    vk::Semaphore waitSemaphores[] = {m_ImageAvailableSemaphore};
+    vk::Semaphore waitSemaphores[] = {m_ImageAvailableSemaphores[currentFrame]};
     vk::PipelineStageFlags waitStages[] = {vk::PipelineStageFlagBits::eColorAttachmentOutput};
-    vk::Semaphore signalSemaphores[] = {m_RenderFinishedSemaphore};
+    vk::Semaphore signalSemaphores[] = {m_RenderFinishedSemaphores[currentFrame]};
 
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
@@ -258,7 +265,8 @@ void Application::drawFrame() {
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (m_GraphicsDevice.m_GraphicsQueue.submit(1, &submitInfo, VK_NULL_HANDLE) != vk::Result::eSuccess) {
+    if (m_GraphicsDevice.m_GraphicsQueue.submit(1, &submitInfo, m_InFlightFences[currentFrame]) !=
+        vk::Result::eSuccess) {
         throw std::runtime_error("Failed to submit draw command buffer");
     }
 
@@ -272,17 +280,30 @@ void Application::drawFrame() {
 
     m_GraphicsDevice.m_PresentQueue.presentKHR(&presentInfo);
 
-
+    currentFrame = (currentFrame + 1) % MaxFramesInFlight;
 }
 
-void Application::createSemaphores() {
+void Application::createSyncObjects() {
+    m_ImageAvailableSemaphores.resize(MaxFramesInFlight);
+    m_RenderFinishedSemaphores.resize(MaxFramesInFlight);
+    m_InFlightFences.resize(MaxFramesInFlight);
+
+
     vk::SemaphoreCreateInfo semaphoreInfo;
-    if (m_GraphicsDevice.m_Device.createSemaphore(&semaphoreInfo, nullptr,
-                                                  &m_ImageAvailableSemaphore) != vk::Result::eSuccess) {
-        throw std::runtime_error("Failed to create semaphores");
+    vk::FenceCreateInfo fenceInfo;
+    fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+    for (int i = 0; i < MaxFramesInFlight; i++) {
+        if (m_GraphicsDevice.m_Device.createSemaphore(&semaphoreInfo, nullptr,
+                                                      &m_ImageAvailableSemaphores[i]) != vk::Result::eSuccess) {
+            throw std::runtime_error("Failed to create semaphores");
+        }
+        if (m_GraphicsDevice.m_Device.createSemaphore(&semaphoreInfo, nullptr,
+                                                      &m_RenderFinishedSemaphores[i]) != vk::Result::eSuccess) {
+            throw std::runtime_error("Failed to create semaphores");
+        }
+        if (m_GraphicsDevice.m_Device.createFence(&fenceInfo, nullptr, &m_InFlightFences[i]) != vk::Result::eSuccess) {
+            throw std::runtime_error("Failed to create fences");
+        }
     }
-    if (m_GraphicsDevice.m_Device.createSemaphore(&semaphoreInfo, nullptr,
-                                                  &m_RenderFinishedSemaphore) != vk::Result::eSuccess) {
-        throw std::runtime_error("Failed to create semaphores");
-    }
+
 }

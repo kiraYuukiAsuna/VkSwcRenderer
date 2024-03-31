@@ -39,7 +39,7 @@ public:
 
     void drawFrame();
 
-    void createSemaphores();
+    void createSyncObjects();
 
     GraphicsDevice m_GraphicsDevice;
     WindowSurface m_WindowSurface;
@@ -48,10 +48,13 @@ public:
     CommandBuffer m_CommandBuffer;
     GLFWwindow *m_GLFWwindow;
 
-    vk::Semaphore m_ImageAvailableSemaphore;
-    vk::Semaphore m_RenderFinishedSemaphore;
+    std::vector<vk::Semaphore> m_ImageAvailableSemaphores;
+    std::vector<vk::Semaphore> m_RenderFinishedSemaphores;
+    std::vector<vk::Fence> m_InFlightFences;
 
+    static constexpr int MaxFramesInFlight = 2;
 
+    int currentFrame = 0;
 #ifdef NDEBUG
     const bool m_EnableValidationLayers = false;
 #else
