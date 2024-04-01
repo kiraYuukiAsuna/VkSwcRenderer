@@ -18,11 +18,16 @@ void CommandBuffer::CreateCommandPool() {
     poolInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 
     m_CommandPool = m_Application->m_GraphicsDevice.m_Device.createCommandPool(poolInfo);
+}
 
-
+void CommandBuffer::cleanupCommandBuffer() {
+    m_Application->m_GraphicsDevice.m_Device.freeCommandBuffers(m_CommandPool,
+                                                                static_cast<uint32_t>(m_CommandBuffers.size()),
+                                                                m_CommandBuffers.data());
 }
 
 void CommandBuffer::cleanup() {
+    cleanupCommandBuffer();
     m_Application->m_GraphicsDevice.m_Device.destroyCommandPool(m_CommandPool);
 }
 
@@ -35,8 +40,6 @@ void CommandBuffer::createCommandBuffers() {
     allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
 
     m_CommandBuffers = m_Application->m_GraphicsDevice.m_Device.allocateCommandBuffers(allocInfo);
-
-
 }
 
 void CommandBuffer::recordCommandBuffers(uint32_t imageIndex) {

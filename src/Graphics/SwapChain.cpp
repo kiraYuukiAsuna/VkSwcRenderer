@@ -145,13 +145,13 @@ void SwapChain::createSwapChain() {
 }
 
 void SwapChain::cleanup() {
-    vkDestroySwapchainKHR(m_Application->m_GraphicsDevice.m_Device, m_SwapChain, nullptr);
     for (auto framebuffer: m_SwapChainFramebuffers) {
         vkDestroyFramebuffer(m_Application->m_GraphicsDevice.m_Device, framebuffer, nullptr);
     }
     for (auto imageView: m_SwapChainImageViews) {
         vkDestroyImageView(m_Application->m_GraphicsDevice.m_Device, imageView, nullptr);
     }
+    vkDestroySwapchainKHR(m_Application->m_GraphicsDevice.m_Device, m_SwapChain, nullptr);
 }
 
 void SwapChain::createFramebuffers() {

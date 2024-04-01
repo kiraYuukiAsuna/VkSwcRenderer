@@ -41,6 +41,8 @@ public:
 
     void createSyncObjects();
 
+    void recreateSwapChain();
+
     GraphicsDevice m_GraphicsDevice;
     WindowSurface m_WindowSurface;
     SwapChain m_SwapChain;
@@ -53,6 +55,8 @@ public:
     std::vector<vk::Fence> m_InFlightFences;
 
     static constexpr int MaxFramesInFlight = 2;
+
+    bool m_FramebufferResized = false;
 
     int currentFrame = 0;
 #ifdef NDEBUG
@@ -95,6 +99,8 @@ private:
 
     void DestoryDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback,
                                        const VkAllocationCallbacks *pAllocator);
+
+    static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
 
     int m_WindowWidth{1200};
     int m_WindowHeight{800};

@@ -46,6 +46,8 @@ void Application::initializeWindow() {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     m_GLFWwindow = glfwCreateWindow(m_WindowWidth, 800, "VkSwcRenderer", nullptr, nullptr);
+    glfwSetWindowUserPointer(m_GLFWwindow, this);
+    glfwSetFramebufferSizeCallback(m_GLFWwindow, framebufferResizeCallback);
 }
 
 void Application::initializeVulkan() {
@@ -243,14 +245,21 @@ VkBool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messa
 
 void Application::drawFrame() {
     m_GraphicsDevice.m_Device.waitForFences(1, &m_InFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    m_GraphicsDevice.m_Device.resetFences(1, &m_InFlightFences[currentFrame]);
 
     uint32_t imageIndex;
-    m_GraphicsDevice.m_Device.acquireNextImageKHR(m_SwapChain.m_SwapChain, UINT64_MAX,
-                                                  m_ImageAvailableSemaphores[currentFrame], nullptr, &imageIndex);
+    auto result = m_GraphicsDevice.m_Device.acquireNextImageKHR(m_SwapChain.m_SwapChain, UINT64_MAX,
+                                                                m_ImageAvailableSemaphores[currentFrame], nullptr,
+                                                                &imageIndex);
+    if (result == vk::Result::eErrorOutOfDateKHR) {
+        recreateSwapChain();
+        return;
+    } else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
+        throw std::runtime_error("Failed to acquire swap chain image");
+    }
+
+    m_GraphicsDevice.m_Device.resetFences(1, &m_InFlightFences[currentFrame]);
 
     m_CommandBuffer.recordCommandBuffers(imageIndex);
-
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = {m_ImageAvailableSemaphores[currentFrame]};
@@ -278,7 +287,13 @@ void Application::drawFrame() {
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr;
 
-    m_GraphicsDevice.m_PresentQueue.presentKHR(&presentInfo);
+    result = m_GraphicsDevice.m_PresentQueue.presentKHR(&presentInfo);
+    if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || m_FramebufferResized) {
+        m_FramebufferResized = false;
+        recreateSwapChain();
+    } else if (result != vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to present swap chain image");
+    }
 
     currentFrame = (currentFrame + 1) % MaxFramesInFlight;
 }
@@ -306,4 +321,30 @@ void Application::createSyncObjects() {
         }
     }
 
+}
+
+void Application::recreateSwapChain() {
+    int width = 0, height = 0;
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(m_GLFWwindow, &width, &height);
+        glfwWaitEvents();
+    }
+
+    m_GraphicsDevice.m_Device.waitIdle();
+
+    m_SwapChain.cleanup();
+    m_CommandBuffer.cleanupCommandBuffer();
+    m_GraphicsPipeline.cleanup();
+
+    m_SwapChain.createSwapChain();
+    m_SwapChain.createImageViews();
+    m_GraphicsPipeline.createRenderPass();
+    m_GraphicsPipeline.create();
+    m_SwapChain.createFramebuffers();
+    m_CommandBuffer.createCommandBuffers();
+}
+
+void Application::framebufferResizeCallback(GLFWwindow *window, int width, int height) {
+    auto app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
+    app->m_FramebufferResized = true;
 }

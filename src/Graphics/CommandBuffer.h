@@ -16,6 +16,7 @@ public:
 
     void recordCommandBuffers(uint32_t imageIndex);
 
+    void cleanupCommandBuffer();
     void cleanup();
 
     vk::CommandPool m_CommandPool;
