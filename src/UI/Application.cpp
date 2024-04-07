@@ -12,7 +12,6 @@ Application::~Application() {
         m_GraphicsDevice.m_Device.destroySemaphore(m_RenderFinishedSemaphores[i], nullptr);
         m_GraphicsDevice.m_Device.destroyFence(m_InFlightFences[i], nullptr);
     }
-
     m_CommandBuffer.cleanup();
     m_GraphicsPipeline.cleanup();
     m_SwapChain.cleanup();
@@ -71,6 +70,7 @@ void Application::initializeVulkan() {
 
     m_CommandBuffer.CreateCommandPool();
     m_CommandBuffer.createCommandBuffers();
+    m_CommandBuffer.createVertexBuffer();
 
     createSyncObjects();
 }

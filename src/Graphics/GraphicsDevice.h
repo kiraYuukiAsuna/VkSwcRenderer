@@ -35,6 +35,8 @@ public:
 
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
 
+    uint32_t findMemoryType(uint32_t i, vk::Flags<vk::MemoryPropertyFlagBits> flags);
+
 private:
     Application *m_Application;
 
