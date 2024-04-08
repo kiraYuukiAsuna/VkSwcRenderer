@@ -26,6 +26,14 @@ public:
 
     void copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size);
 
+    void createUniformBuffers();
+
+    void updateUniformBuffer(uint32_t currentImage);
+
+    void createDescriptorPool();
+
+    void createDescriptorSets();
+
     void cleanupCommandBuffer();
 
     void cleanup();
@@ -39,6 +47,13 @@ public:
     vk::Buffer m_IndexBuffer;
     vk::DeviceMemory m_IndexBufferMemory;
 
+    std::vector<vk::Buffer> m_UniformBuffers;
+    std::vector<vk::DeviceMemory> m_UniformBuffersMemory;
+
+    vk::DescriptorPool m_DescriptorPool;
+
+    std::vector<vk::DescriptorSet> m_DescriptorSets;
+
     std::vector<Vertex> vertices = {
             {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
             {{0.5f,  -0.5f}, {0.0f, 1.0f, 0.0f}},
@@ -48,6 +63,12 @@ public:
     };
 
     std::vector<uint32_t> indices = {0, 1, 2, 2, 3, 0};
+
+    struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
 
 private:
     Application *m_Application;

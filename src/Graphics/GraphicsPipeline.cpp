@@ -40,7 +40,7 @@ void GraphicsPipeline::create() {
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexBindingDescriptions  = &bindingDescription;
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo;
@@ -71,7 +71,7 @@ void GraphicsPipeline::create() {
     rasterizationStateCreateInfo.polygonMode = vk::PolygonMode::eFill;
     rasterizationStateCreateInfo.lineWidth = 1.0;
     rasterizationStateCreateInfo.cullMode = vk::CullModeFlagBits::eBack;
-    rasterizationStateCreateInfo.frontFace = vk::FrontFace::eClockwise;
+    rasterizationStateCreateInfo.frontFace = vk::FrontFace::eCounterClockwise;
     rasterizationStateCreateInfo.depthBiasEnable = false;
     rasterizationStateCreateInfo.depthBiasConstantFactor = 0.0;
     rasterizationStateCreateInfo.depthBiasClamp = 0.0;
@@ -112,8 +112,8 @@ void GraphicsPipeline::create() {
     vk::PipelineDynamicStateCreateInfo dynamicStateCreateInfo;
 
     vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo;
-    pipelineLayoutCreateInfo.setLayoutCount = 0;
-    pipelineLayoutCreateInfo.pSetLayouts = nullptr;
+    pipelineLayoutCreateInfo.setLayoutCount = 1;
+    pipelineLayoutCreateInfo.pSetLayouts = &m_DescriptorSetLayout;
     pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
     pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
@@ -150,6 +150,7 @@ void GraphicsPipeline::create() {
 }
 
 void GraphicsPipeline::cleanup() {
+    m_Application->m_GraphicsDevice.m_Device.destroyDescriptorSetLayout(m_DescriptorSetLayout, nullptr);
     m_Application->m_GraphicsDevice.m_Device.destroyPipeline(m_GraphicsPipeline, nullptr);
     m_Application->m_GraphicsDevice.m_Device.destroyPipelineLayout(m_PipelineLayout, nullptr);
     m_Application->m_GraphicsDevice.m_Device.destroyRenderPass(m_RenderPass, nullptr);
@@ -197,4 +198,23 @@ void GraphicsPipeline::createRenderPass() {
         SEELE_ERROR_TAG(__func__, "Create Render Pass Failed!");
     }
 
+}
+
+void GraphicsPipeline::createDescriptorSetLayout() {
+    vk::DescriptorSetLayoutBinding uboLayoutBinding{};
+    uboLayoutBinding.binding = 0;
+    uboLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+    uboLayoutBinding.descriptorCount = 1;
+    uboLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+    uboLayoutBinding.pImmutableSamplers = nullptr;
+
+    vk::DescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &uboLayoutBinding;
+
+    if (m_Application->m_GraphicsDevice.m_Device.createDescriptorSetLayout(&layoutInfo, nullptr,
+                                                                           &m_DescriptorSetLayout) !=
+        vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to create descriptor set layout!");
+    }
 }

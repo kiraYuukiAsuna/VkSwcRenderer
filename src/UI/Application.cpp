@@ -62,6 +62,7 @@ void Application::initializeVulkan() {
 
     m_SwapChain.createSwapChain();
 
+    m_GraphicsPipeline.createDescriptorSetLayout();
     m_GraphicsPipeline.createRenderPass();
     m_GraphicsPipeline.create();
 
@@ -72,6 +73,9 @@ void Application::initializeVulkan() {
     m_CommandBuffer.createCommandBuffers();
     m_CommandBuffer.createVertexBuffer();
     m_CommandBuffer.createIndexBuffer();
+    m_CommandBuffer.createDescriptorPool();
+    m_CommandBuffer.createUniformBuffers();
+    m_CommandBuffer.createDescriptorSets();
 
     createSyncObjects();
 }
@@ -258,7 +262,11 @@ void Application::drawFrame() {
         throw std::runtime_error("Failed to acquire swap chain image");
     }
 
-    m_GraphicsDevice.m_Device.resetFences(1, &m_InFlightFences[currentFrame]);
+    if(m_GraphicsDevice.m_Device.resetFences(1, &m_InFlightFences[currentFrame])!=vk::Result::eSuccess){
+        throw std::runtime_error("Failed to reset fence");
+    }
+
+    m_CommandBuffer.updateUniformBuffer(imageIndex);
 
     m_CommandBuffer.recordCommandBuffers(imageIndex);
 
@@ -334,15 +342,10 @@ void Application::recreateSwapChain() {
     m_GraphicsDevice.m_Device.waitIdle();
 
     m_SwapChain.cleanup();
-    m_CommandBuffer.cleanupCommandBuffer();
-    m_GraphicsPipeline.cleanup();
 
     m_SwapChain.createSwapChain();
     m_SwapChain.createImageViews();
-    m_GraphicsPipeline.createRenderPass();
-    m_GraphicsPipeline.create();
     m_SwapChain.createFramebuffers();
-    m_CommandBuffer.createCommandBuffers();
 }
 
 void Application::framebufferResizeCallback(GLFWwindow *window, int width, int height) {

@@ -1,6 +1,12 @@
 #include "CommandBuffer.h"
 #include "UI/Application.h"
 
+#define GLM_FORCE_RADIANS
+
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include <chrono>
+
 CommandBuffer::CommandBuffer(Application *application) : m_Application(application) {
 
 }
@@ -27,10 +33,15 @@ void CommandBuffer::cleanupCommandBuffer() {
 }
 
 void CommandBuffer::cleanup() {
-    m_Application->m_GraphicsDevice.m_Device.freeMemory(m_IndexBufferMemory);
+    m_Application->m_GraphicsDevice.m_Device.destroyDescriptorPool(m_DescriptorPool);
+    for (size_t i = 0; i < m_Application->m_SwapChain.m_SwapChainImages.size(); i++) {
+        m_Application->m_GraphicsDevice.m_Device.destroyBuffer(m_UniformBuffers[i]);
+        m_Application->m_GraphicsDevice.m_Device.freeMemory(m_UniformBuffersMemory[i]);
+    }
     m_Application->m_GraphicsDevice.m_Device.destroyBuffer(m_IndexBuffer);
-    m_Application->m_GraphicsDevice.m_Device.freeMemory(m_VertexBufferMemory);
+    m_Application->m_GraphicsDevice.m_Device.freeMemory(m_IndexBufferMemory);
     m_Application->m_GraphicsDevice.m_Device.destroyBuffer(m_VertexBuffer);
+    m_Application->m_GraphicsDevice.m_Device.freeMemory(m_VertexBufferMemory);
     cleanupCommandBuffer();
     m_Application->m_GraphicsDevice.m_Device.destroyCommandPool(m_CommandPool);
 }
@@ -88,6 +99,14 @@ void CommandBuffer::recordCommandBuffers(uint32_t imageIndex) {
     vk::Buffer vertexBuffers[] = {m_VertexBuffer};
     vk::DeviceSize offsets[] = {0};
     m_CommandBuffers[imageIndex].bindVertexBuffers(0, 1, vertexBuffers, offsets);
+
+    m_CommandBuffers[imageIndex].bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
+
+    m_CommandBuffers[imageIndex].bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+                                                    m_Application->m_GraphicsPipeline.m_PipelineLayout, 0, 1,
+                                                    &m_DescriptorSets[imageIndex], 0, nullptr);
+
+    m_CommandBuffers[imageIndex].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
     m_CommandBuffers[imageIndex].draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 
@@ -205,3 +224,89 @@ void CommandBuffer::createIndexBuffer() {
     m_Application->m_GraphicsDevice.m_Device.destroyBuffer(stagingBuffer);
     m_Application->m_GraphicsDevice.m_Device.freeMemory(stagingBufferMemory);
 }
+
+void CommandBuffer::createUniformBuffers() {
+    vk::DeviceSize bufferSize = sizeof(UniformBufferObject);
+
+    m_UniformBuffers.resize(m_Application->m_SwapChain.m_SwapChainImages.size());
+    m_UniformBuffersMemory.resize(m_Application->m_SwapChain.m_SwapChainImages.size());
+
+    for (size_t i = 0; i < m_Application->m_SwapChain.m_SwapChainImages.size(); i++) {
+        createBuffer(bufferSize, vk::BufferUsageFlagBits::eUniformBuffer,
+                     vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                     m_UniformBuffers[i], m_UniformBuffersMemory[i]);
+    }
+}
+
+void CommandBuffer::updateUniformBuffer(uint32_t currentImage) {
+    static auto startTime = std::chrono::high_resolution_clock::now();
+
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    UniformBufferObject ubo{};
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
+                            glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
+                           glm::vec3(0.0f, 0.0f, 0.0f),
+                           glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f),
+                                m_Application->m_SwapChain.m_SwapChainExtent.width /
+                                (float) m_Application->m_SwapChain.m_SwapChainExtent.height, 0.1f, 10.0f);
+
+    ubo.proj[1][1] *= -1;
+
+    void *data = m_Application->m_GraphicsDevice.m_Device.mapMemory(m_UniformBuffersMemory[currentImage], 0,
+                                                                    sizeof(ubo));
+    memcpy(data, &ubo, sizeof(ubo));
+    m_Application->m_GraphicsDevice.m_Device.unmapMemory(m_UniformBuffersMemory[currentImage]);
+}
+
+void CommandBuffer::createDescriptorPool() {
+    vk::DescriptorPoolSize poolSize{};
+    poolSize.type = vk::DescriptorType::eUniformBuffer;
+    poolSize.descriptorCount = static_cast<uint32_t>(m_Application->m_SwapChain.m_SwapChainImages.size());
+
+    vk::DescriptorPoolCreateInfo poolInfo{};
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>(m_Application->m_SwapChain.m_SwapChainImages.size());
+
+    m_DescriptorPool = m_Application->m_GraphicsDevice.m_Device.createDescriptorPool(poolInfo);
+}
+
+void CommandBuffer::createDescriptorSets() {
+    std::vector<vk::DescriptorSetLayout> layouts(m_Application->m_SwapChain.m_SwapChainImages.size(),
+                                                  m_Application->m_GraphicsPipeline.m_DescriptorSetLayout);
+    vk::DescriptorSetAllocateInfo allocInfo{};
+    allocInfo.descriptorPool = m_DescriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(m_Application->m_SwapChain.m_SwapChainImages.size());
+    allocInfo.pSetLayouts = layouts.data();
+
+    m_DescriptorSets.resize(m_Application->m_SwapChain.m_SwapChainImages.size());
+    if (m_Application->m_GraphicsDevice.m_Device.allocateDescriptorSets(&allocInfo, m_DescriptorSets.data()) !=
+        vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to allocate descriptor sets!");
+    }
+
+    for (size_t i = 0; i < m_Application->m_SwapChain.m_SwapChainImages.size(); i++) {
+        vk::DescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = m_UniformBuffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(UniformBufferObject);
+
+        vk::WriteDescriptorSet descriptorWrite{};
+        descriptorWrite.dstSet = m_DescriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = vk::DescriptorType::eUniformBuffer;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        descriptorWrite.pImageInfo = nullptr;
+        descriptorWrite.pTexelBufferView = nullptr;
+
+        m_Application->m_GraphicsDevice.m_Device.updateDescriptorSets(1, &descriptorWrite, 0, nullptr);
+    }
+}
+
+

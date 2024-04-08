@@ -15,12 +15,17 @@ public:
 
     void createRenderPass();
 
+    void createDescriptorSetLayout();
+
     void cleanup();
 
     vk::RenderPass m_RenderPass;
     vk::Pipeline m_GraphicsPipeline;
+
+    vk::DescriptorSetLayout m_DescriptorSetLayout;
+
+    vk::PipelineLayout m_PipelineLayout;
 private:
     Application *m_Application;
 
-    vk::PipelineLayout m_PipelineLayout;
 };
