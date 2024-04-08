@@ -71,6 +71,7 @@ void Application::initializeVulkan() {
     m_CommandBuffer.CreateCommandPool();
     m_CommandBuffer.createCommandBuffers();
     m_CommandBuffer.createVertexBuffer();
+    m_CommandBuffer.createIndexBuffer();
 
     createSyncObjects();
 }

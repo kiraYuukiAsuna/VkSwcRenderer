@@ -27,6 +27,8 @@ void CommandBuffer::cleanupCommandBuffer() {
 }
 
 void CommandBuffer::cleanup() {
+    m_Application->m_GraphicsDevice.m_Device.freeMemory(m_IndexBufferMemory);
+    m_Application->m_GraphicsDevice.m_Device.destroyBuffer(m_IndexBuffer);
     m_Application->m_GraphicsDevice.m_Device.freeMemory(m_VertexBufferMemory);
     m_Application->m_GraphicsDevice.m_Device.destroyBuffer(m_VertexBuffer);
     cleanupCommandBuffer();
@@ -95,27 +97,111 @@ void CommandBuffer::recordCommandBuffers(uint32_t imageIndex) {
 }
 
 void CommandBuffer::createVertexBuffer() {
-    vk::BufferCreateInfo bufferInfo;
-    bufferInfo.size = sizeof(vertices[0]) * vertices.size();
-    bufferInfo.usage = vk::BufferUsageFlagBits::eVertexBuffer;
+    vk::DeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+    vk::Buffer stagingBuffer;
+    vk::DeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
+                 vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                 stagingBuffer, stagingBufferMemory);
+
+    void *data = m_Application->m_GraphicsDevice.m_Device.mapMemory(stagingBufferMemory, 0, bufferSize);
+    memcpy(data, vertices.data(), (size_t) bufferSize);
+    m_Application->m_GraphicsDevice.m_Device.unmapMemory(stagingBufferMemory);
+
+
+    createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer,
+                 vk::MemoryPropertyFlagBits::eDeviceLocal, m_VertexBuffer, m_VertexBufferMemory);
+
+    copyBuffer(stagingBuffer, m_VertexBuffer, bufferSize);
+
+    m_Application->m_GraphicsDevice.m_Device.destroyBuffer(stagingBuffer);
+    m_Application->m_GraphicsDevice.m_Device.freeMemory(stagingBufferMemory);
+}
+
+void CommandBuffer::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, vk::MemoryPropertyFlags properties,
+                                 vk::Buffer &buffer, vk::DeviceMemory &bufferMemory) {
+    vk::BufferCreateInfo bufferInfo{};
+    bufferInfo.size = size;
+    bufferInfo.usage = usage;
     bufferInfo.sharingMode = vk::SharingMode::eExclusive;
 
-    m_VertexBuffer = m_Application->m_GraphicsDevice.m_Device.createBuffer(bufferInfo);
+    if (m_Application->m_GraphicsDevice.m_Device.createBuffer(&bufferInfo, nullptr, &buffer) != vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to create buffer!");
+    }
 
-    vk::MemoryRequirements memRequirements = m_Application->m_GraphicsDevice.m_Device.getBufferMemoryRequirements(
-            m_VertexBuffer);
+    vk::MemoryRequirements memRequirements;
+    m_Application->m_GraphicsDevice.m_Device.getBufferMemoryRequirements(buffer, &memRequirements);
 
-    vk::MemoryAllocateInfo allocInfo;
+    vk::MemoryAllocateInfo allocInfo{};
     allocInfo.allocationSize = memRequirements.size;
     allocInfo.memoryTypeIndex = m_Application->m_GraphicsDevice.findMemoryType(memRequirements.memoryTypeBits,
-                                                                               vk::MemoryPropertyFlagBits::eHostVisible |
-                                                                               vk::MemoryPropertyFlagBits::eHostCoherent);
+                                                                               properties);
 
-    m_VertexBufferMemory = m_Application->m_GraphicsDevice.m_Device.allocateMemory(allocInfo);
+    if (m_Application->m_GraphicsDevice.m_Device.allocateMemory(&allocInfo, nullptr, &bufferMemory) !=
+        vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to allocate buffer memory!");
+    }
 
-    m_Application->m_GraphicsDevice.m_Device.bindBufferMemory(m_VertexBuffer, m_VertexBufferMemory, 0);
+    m_Application->m_GraphicsDevice.m_Device.bindBufferMemory(buffer, bufferMemory, 0);
+}
 
-    void *data = m_Application->m_GraphicsDevice.m_Device.mapMemory(m_VertexBufferMemory, 0, bufferInfo.size);
-    memcpy(data, vertices.data(), (size_t) bufferInfo.size);
-    m_Application->m_GraphicsDevice.m_Device.unmapMemory(m_VertexBufferMemory);
+void CommandBuffer::copyBuffer(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::DeviceSize size) {
+    vk::CommandBufferAllocateInfo allocInfo{};
+    allocInfo.level = vk::CommandBufferLevel::ePrimary;
+    allocInfo.commandPool = m_CommandPool;
+    allocInfo.commandBufferCount = 1;
+
+    vk::CommandBuffer commandBuffer;
+    if (m_Application->m_GraphicsDevice.m_Device.allocateCommandBuffers(&allocInfo, &commandBuffer) !=
+        vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to allocate command buffer!");
+    }
+
+    vk::CommandBufferBeginInfo beginInfo{};
+    beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+    if (commandBuffer.begin(&beginInfo) != vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to begin recording command buffer!");
+    }
+
+    vk::BufferCopy copyRegion{};
+    copyRegion.size = size;
+    commandBuffer.copyBuffer(srcBuffer, dstBuffer, 1, &copyRegion);
+
+    commandBuffer.end();
+
+    vk::SubmitInfo submitInfo{};
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+
+    if (m_Application->m_GraphicsDevice.m_GraphicsQueue.submit(1, &submitInfo, nullptr) != vk::Result::eSuccess) {
+        throw std::runtime_error("Failed to submit copy buffer command buffer!");
+    }
+
+    m_Application->m_GraphicsDevice.m_GraphicsQueue.waitIdle();
+
+    m_Application->m_GraphicsDevice.m_Device.freeCommandBuffers(m_CommandPool, 1, &commandBuffer);
+}
+
+void CommandBuffer::createIndexBuffer() {
+    vk::DeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+    vk::Buffer stagingBuffer;
+    vk::DeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferSrc,
+                 vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+                 stagingBuffer, stagingBufferMemory);
+
+    void *data = m_Application->m_GraphicsDevice.m_Device.mapMemory(stagingBufferMemory, 0, bufferSize);
+    memcpy(data, indices.data(), (size_t) bufferSize);
+    m_Application->m_GraphicsDevice.m_Device.unmapMemory(stagingBufferMemory);
+
+    createBuffer(bufferSize, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer,
+                 vk::MemoryPropertyFlagBits::eDeviceLocal, m_IndexBuffer, m_IndexBufferMemory);
+
+    copyBuffer(stagingBuffer, m_IndexBuffer, bufferSize);
+
+    m_Application->m_GraphicsDevice.m_Device.destroyBuffer(stagingBuffer);
+    m_Application->m_GraphicsDevice.m_Device.freeMemory(stagingBufferMemory);
 }
