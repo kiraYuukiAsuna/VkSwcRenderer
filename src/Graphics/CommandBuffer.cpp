@@ -80,21 +80,21 @@ void CommandBuffer::recordCommandBuffers(uint32_t imageIndex) {
     m_CommandBuffers[imageIndex].bindPipeline(vk::PipelineBindPoint::eGraphics,
                                               m_Application->m_GraphicsPipeline.m_GraphicsPipeline);
 
-//    vk::Viewport viewport{};
-//    viewport.x = 0.0f;
-//    viewport.y = 0.0f;
-//    viewport.width = (float) m_Application->m_SwapChain.m_SwapChainExtent.width;
-//    viewport.height = (float) m_Application->m_SwapChain.m_SwapChainExtent.height;
-//    viewport.minDepth = 0.0f;
-//    viewport.maxDepth = 1.0f;
-//
-//    m_CommandBuffers[imageIndex].setViewport(0, 1, &viewport);
-//
-//    vk::Rect2D scissor{};
-//    scissor.offset.setX(0);
-//    scissor.offset.setY(0);
-//    scissor.extent = m_Application->m_SwapChain.m_SwapChainExtent;
-//    m_CommandBuffers[imageIndex].setScissor(0, 1, &scissor);
+    vk::Viewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float) m_Application->m_SwapChain.m_SwapChainExtent.width;
+    viewport.height = (float) m_Application->m_SwapChain.m_SwapChainExtent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    m_CommandBuffers[imageIndex].setViewport(0, 1, &viewport);
+
+    vk::Rect2D scissor{};
+    scissor.offset.setX(0);
+    scissor.offset.setY(0);
+    scissor.extent = m_Application->m_SwapChain.m_SwapChainExtent;
+    m_CommandBuffers[imageIndex].setScissor(0, 1, &scissor);
 
     vk::Buffer vertexBuffers[] = {m_VertexBuffer};
     vk::DeviceSize offsets[] = {0};

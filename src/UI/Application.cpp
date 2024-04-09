@@ -249,7 +249,9 @@ VkBool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messa
 }
 
 void Application::drawFrame() {
-    m_GraphicsDevice.m_Device.waitForFences(1, &m_InFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    if(m_GraphicsDevice.m_Device.waitForFences(1, &m_InFlightFences[currentFrame], VK_TRUE, UINT64_MAX)!=vk::Result::eSuccess){
+        throw std::runtime_error("Failed to wait for fence");
+    }
 
     uint32_t imageIndex;
     auto result = m_GraphicsDevice.m_Device.acquireNextImageKHR(m_SwapChain.m_SwapChain, UINT64_MAX,
