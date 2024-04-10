@@ -7,11 +7,8 @@
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
-
-#include <vk_mem_alloc.h>
 
 #include "Util/Logger/Log.h"
 #include "Graphics/GraphicsDevice.h"
@@ -22,9 +19,6 @@
 
 class Application {
 public:
-
-    Application();
-
     ~Application();
 
     Application(Application &) = delete;
@@ -35,6 +29,11 @@ public:
 
     Application &operator=(Application &&) = delete;
 
+    static Application &getInstance() {
+        static Application instance;
+        return instance;
+    }
+
     void run();
 
     void drawFrame();
@@ -42,6 +41,8 @@ public:
     void createSyncObjects();
 
     void recreateSwapChain();
+
+    void loadSwc(const std::string& filePath);
 
     GraphicsDevice m_GraphicsDevice;
     WindowSurface m_WindowSurface;
@@ -70,6 +71,7 @@ public:
     };
 
 private:
+    Application();
 
     void initializeLogger();
 

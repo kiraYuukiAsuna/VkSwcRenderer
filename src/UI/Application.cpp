@@ -1,9 +1,9 @@
 #include "Application.h"
 
+#include "Object/ObjectManager.h"
 
 Application::Application() : m_GraphicsDevice(this), m_WindowSurface(this), m_SwapChain(this),
                              m_GraphicsPipeline(this), m_CommandBuffer(this) {
-
 }
 
 Application::~Application() {
@@ -71,11 +71,6 @@ void Application::initializeVulkan() {
 
     m_CommandBuffer.CreateCommandPool();
     m_CommandBuffer.createCommandBuffers();
-    m_CommandBuffer.createVertexBuffer();
-    m_CommandBuffer.createIndexBuffer();
-    m_CommandBuffer.createDescriptorPool();
-    m_CommandBuffer.createUniformBuffers();
-    m_CommandBuffer.createDescriptorSets();
 
     createSyncObjects();
 }
@@ -115,7 +110,8 @@ void Application::createVulkanInstance() {
     if (m_EnableValidationLayers) {
         createInfo.enabledLayerCount = static_cast<uint32_t>(m_ValidationLayers.size());
         createInfo.ppEnabledLayerNames = m_ValidationLayers.data();
-    } else {
+    }
+    else {
         createInfo.enabledLayerCount = 0;
     }
     createInfo.flags = 0;
@@ -134,10 +130,10 @@ bool Application::checkValidationLayerSupport() {
     std::vector<VkLayerProperties> availableLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
 
-    for (const char *layerName: m_ValidationLayers) {
+    for (const char* layerName: m_ValidationLayers) {
         bool layerFound = false;
 
-        for (const auto &layerProperties: availableLayers) {
+        for (const auto&layerProperties: availableLayers) {
             if (strcmp(layerName, layerProperties.layerName) == 0) {
                 SEELE_INFO_TAG(__func__, "Found {}", layerName);
                 layerFound = true;
@@ -156,7 +152,7 @@ bool Application::checkValidationLayerSupport() {
 
 std::vector<const char *> Application::getRequiredExtensions() {
     uint32_t glfwExtensionCount = 0;
-    const char **glfwExtensions;
+    const char** glfwExtensions;
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
     std::vector<const char *> requiredExtensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
@@ -172,13 +168,13 @@ std::vector<const char *> Application::getRequiredExtensions() {
     vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, availableExtensions.data());
 
     SEELE_INFO_TAG(__func__, "{} Available Extensions Supported:", availableExtensions.size());
-    for (const auto &extension: availableExtensions) {
+    for (const auto&extension: availableExtensions) {
         SEELE_INFO_TAG(__func__, "{}", extension.extensionName);
     }
-    for (auto &requiredExtension: requiredExtensions) {
+    for (auto&requiredExtension: requiredExtensions) {
         bool layerFound = false;
 
-        for (auto &availableExtension: availableExtensions) {
+        for (auto&availableExtension: availableExtensions) {
             if (strcmp(availableExtension.extensionName, requiredExtension) == 0) {
                 SEELE_INFO_TAG(__func__, "Found {}", availableExtension.extensionName);
                 layerFound = true;
@@ -218,22 +214,23 @@ void Application::setupDebugCallback() {
 }
 
 VkResult
-Application::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-                                          const VkAllocationCallbacks *pAllocator,
-                                          VkDebugUtilsMessengerEXT *pCallback) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance,
-                                                                           "vkCreateDebugUtilsMessengerEXT");
+Application::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                          const VkAllocationCallbacks* pAllocator,
+                                          VkDebugUtilsMessengerEXT* pCallback) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance,
+                                                                          "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
         return func(instance, pCreateInfo, pAllocator, pCallback);
-    } else {
+    }
+    else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
 
 void Application::DestoryDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT callback,
-                                                const VkAllocationCallbacks *pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance,
-                                                                            "vkDestroyDebugUtilsMessengerEXT");
+                                                const VkAllocationCallbacks* pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance,
+                                                                           "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
         func(instance, callback, pAllocator);
     }
@@ -241,7 +238,7 @@ void Application::DestoryDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtil
 
 VkBool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
                                     VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
+                                    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
         SEELE_WARN_TAG(__func__, "Validation Layer: {}", pCallbackData->pMessage);
     }
@@ -249,7 +246,8 @@ VkBool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messa
 }
 
 void Application::drawFrame() {
-    if(m_GraphicsDevice.m_Device.waitForFences(1, &m_InFlightFences[currentFrame], VK_TRUE, UINT64_MAX)!=vk::Result::eSuccess){
+    if (m_GraphicsDevice.m_Device.waitForFences(1, &m_InFlightFences[currentFrame], VK_TRUE, UINT64_MAX) !=
+        vk::Result::eSuccess) {
         throw std::runtime_error("Failed to wait for fence");
     }
 
@@ -260,17 +258,16 @@ void Application::drawFrame() {
     if (result == vk::Result::eErrorOutOfDateKHR) {
         recreateSwapChain();
         return;
-    } else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
+    }
+    else if (result != vk::Result::eSuccess && result != vk::Result::eSuboptimalKHR) {
         throw std::runtime_error("Failed to acquire swap chain image");
     }
 
-    if(m_GraphicsDevice.m_Device.resetFences(1, &m_InFlightFences[currentFrame])!=vk::Result::eSuccess){
+    if (m_GraphicsDevice.m_Device.resetFences(1, &m_InFlightFences[currentFrame]) != vk::Result::eSuccess) {
         throw std::runtime_error("Failed to reset fence");
     }
 
-    m_CommandBuffer.updateUniformBuffer(imageIndex);
-
-    m_CommandBuffer.recordCommandBuffers(imageIndex);
+    m_CommandBuffer.recordCommandBuffers(imageIndex, ObjectManager::getInstance().m_DescriptorSets);
 
     vk::SubmitInfo submitInfo;
     vk::Semaphore waitSemaphores[] = {m_ImageAvailableSemaphores[currentFrame]};
@@ -281,7 +278,7 @@ void Application::drawFrame() {
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &m_CommandBuffer.m_CommandBuffers[imageIndex];
+    submitInfo.pCommandBuffers = &ObjectManager::getInstance().m_CommandBuffers[imageIndex];
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -302,7 +299,8 @@ void Application::drawFrame() {
     if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || m_FramebufferResized) {
         m_FramebufferResized = false;
         recreateSwapChain();
-    } else if (result != vk::Result::eSuccess) {
+    }
+    else if (result != vk::Result::eSuccess) {
         throw std::runtime_error("Failed to present swap chain image");
     }
 
@@ -331,7 +329,6 @@ void Application::createSyncObjects() {
             throw std::runtime_error("Failed to create fences");
         }
     }
-
 }
 
 void Application::recreateSwapChain() {
@@ -350,7 +347,10 @@ void Application::recreateSwapChain() {
     m_SwapChain.createFramebuffers();
 }
 
-void Application::framebufferResizeCallback(GLFWwindow *window, int width, int height) {
+void Application::framebufferResizeCallback(GLFWwindow* window, int width, int height) {
     auto app = reinterpret_cast<Application *>(glfwGetWindowUserPointer(window));
     app->m_FramebufferResized = true;
+}
+
+void Application::loadSwc(const std::string&filePath) {
 }

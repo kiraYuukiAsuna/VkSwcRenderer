@@ -30,6 +30,11 @@ elseif (APPLE)
 
 endif ()
 
+file(GLOB_RECURSE SRC_LIST
+        "${PROJECT_SOURCE_DIR}/src/*.cpp"
+        "${PROJECT_SOURCE_DIR}/src/*.h"
+        "${PROJECT_SOURCE_DIR}/src/*.hpp"
+)
 
 set(CPP_HEADER
 
@@ -44,17 +49,9 @@ set(CPP_SOURCE
         ThirdParty/imgui-1.90.4/imgui_demo.cpp
         ThirdParty/imgui-1.90.4/imgui_tables.cpp
         ThirdParty/imgui-1.90.4/imgui_widgets.cpp
-
-        src/UI/Application.cpp
-        src/Graphics/GraphicsDevice.cpp
-        src/Graphics/WindowSurface.cpp
-        src/Graphics/SwapChain.cpp
-        src/Graphics/GraphicsPipeline.cpp
-        src/Graphics/ShaderCode.cpp
-        src/Graphics/CommandBuffer.cpp
 )
 
-add_executable(${PROJECT_NAME} ${CPP_HEADER} ${CPP_SOURCE})
+add_executable(${PROJECT_NAME} ${CPP_HEADER} ${CPP_SOURCE} ${SRC_LIST})
 
 if (WIN32)
     target_link_libraries(${PROJECT_NAME}

@@ -165,6 +165,7 @@ void GraphicsPipeline::create() {
 
 void GraphicsPipeline::cleanup() {
     m_Application->m_GraphicsDevice.m_Device.destroyDescriptorSetLayout(m_DescriptorSetLayout, nullptr);
+    m_Application->m_GraphicsDevice.m_Device.destroyPipeline(m_SwcConnectLinePipeline, nullptr);
     m_Application->m_GraphicsDevice.m_Device.destroyPipeline(m_SwcNodePipeline, nullptr);
     m_Application->m_GraphicsDevice.m_Device.destroyPipelineLayout(m_PipelineLayout, nullptr);
     m_Application->m_GraphicsDevice.m_Device.destroyRenderPass(m_RenderPass, nullptr);

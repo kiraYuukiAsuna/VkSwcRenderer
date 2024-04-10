@@ -1,7 +1,13 @@
+#include "Object/ObjectManager.h"
+#include "Object/SwcObject.h"
 #include "UI/Application.h"
 
 int main() {
-    Application app;
+    auto& app = Application::getInstance();
+
+    SwcObject swcObject;
+    swcObject.load("/home/seele/Desktop/Swc/ExportSwc/18454_00019.ano.eswc.ano.eswc");
+    ObjectManager::getInstance().addObject(&swcObject);
 
     try {
         app.run();
