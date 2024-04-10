@@ -6,7 +6,7 @@ int main() {
     auto& app = Application::getInstance();
 
     SwcObject swcObject;
-    swcObject.load("/home/seele/Desktop/Swc/ExportSwc/18454_00019.ano.eswc.ano.eswc");
+    swcObject.load("../brainID_18865_X_7924.17_Y_4242.94_Z_2736.16.v3dpbd.ano.eswc");
     ObjectManager::getInstance().addObject(&swcObject);
 
     try {

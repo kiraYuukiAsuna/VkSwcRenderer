@@ -27,9 +27,13 @@ public:
             for (auto&node: object->nodeVertices) {
                 pointVertices.push_back(node);
             }
+
+            for(auto& line: object->lineVertices) {
+                lineVertices.push_back(line);
+            }
         }
         pointVertices.push_back(Vertex{{1, 1, 0}, {1.0, 1.0, 1.0}, 1.0});
-        pointVertices.push_back(Vertex{{-1, -1, 0}, {1.0, 1.0, 1.0}, 1.0});
+        pointVertices.push_back(Vertex{{2, 2, 0}, {1.0, 1.0, 1.0}, 1.0});
         if (pointVertices.size() > 0) {
             createVertexBuffer(pointVertices, m_PointVertexBuffer, m_PointVertexBufferMemory);
             // createIndexBuffer(pointIndices, m_PointIndexBuffer, m_PointIndexBufferMemory);

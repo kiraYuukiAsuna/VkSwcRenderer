@@ -144,15 +144,15 @@ void ObjectManager::updateUniformBuffer(uint32_t currentImage) {
     //                         glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.model = glm::mat4(1.0f);
     // View matrix
-    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -1.0f);
-    glm::vec3 targetPos = glm::vec3(1.0f, 1.0f, 0.0f);
+    glm::vec3 cameraPos = glm::vec3(8000.0f, 4000.0f, -14490.0f);
+    glm::vec3 targetPos = glm::vec3(8000.0f, 4000.0f, 1.0f);
     glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
     ubo.view = glm::lookAt(cameraPos, targetPos, upVector);
 
     // Projection matrix
-    float fov = glm::radians(60.0f);
+    float fov = glm::radians(45.0f);
     float aspect = static_cast<float>(Application::getInstance().m_SwapChain.m_SwapChainExtent.width) / (float)Application::getInstance().m_SwapChain.m_SwapChainExtent.height; // replace windowWidth and windowHeight with your actual window size
-    float nearPlane = 0.0f;
+    float nearPlane = 1.0f;
     float farPlane = 20000.0f;
     ubo.proj = glm::perspective(fov, aspect, nearPlane, farPlane);
 

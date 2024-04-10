@@ -1,4 +1,7 @@
 #include "SwcObject.h"
+
+#include <unordered_map>
+
 #include "Util/FileIo/SwcIo.hpp"
 #include "Type.hpp"
 #include <vector>
@@ -24,14 +27,23 @@ void SwcObject::load(const std::string&filePath) {
 }
 
 void SwcObject::draw() {
+    std::unordered_map<int, int> n_to_index_map;
+    for (int i = 0; i < m_SwcNodeData.size(); ++i) {
+        n_to_index_map[m_SwcNodeData[i].n] = i;
+    }
+
     for (auto&node: m_SwcNodeData) {
         nodeVertices.push_back({node.position, node.color});
     }
 
     for (auto&node: m_SwcNodeData) {
         if (node.parent != -1) {
+            auto iter = n_to_index_map.find(node.parent);
+            if(iter==n_to_index_map.end()) {
+                continue;
+            }
             lineVertices.push_back({node.position, node.color});
-            lineVertices.push_back({m_SwcNodeData[node.parent].position, m_SwcNodeData[node.parent].color});
+            lineVertices.push_back({m_SwcNodeData[iter->second].position, m_SwcNodeData[iter->second].color});
         }
     }
 }
