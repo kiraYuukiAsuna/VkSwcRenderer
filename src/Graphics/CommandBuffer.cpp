@@ -78,7 +78,7 @@ void CommandBuffer::recordCommandBuffers(uint32_t imageIndex) {
     m_CommandBuffers[imageIndex].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
     m_CommandBuffers[imageIndex].bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                              m_Application->m_GraphicsPipeline.m_GraphicsPipeline);
+                                              m_Application->m_GraphicsPipeline.m_SwcNodePipeline);
 
     vk::Viewport viewport{};
     viewport.x = 0.0f;
@@ -100,13 +100,13 @@ void CommandBuffer::recordCommandBuffers(uint32_t imageIndex) {
     vk::DeviceSize offsets[] = {0};
     m_CommandBuffers[imageIndex].bindVertexBuffers(0, 1, vertexBuffers, offsets);
 
-    m_CommandBuffers[imageIndex].bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
+//    m_CommandBuffers[imageIndex].bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
 
     m_CommandBuffers[imageIndex].bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
                                                     m_Application->m_GraphicsPipeline.m_PipelineLayout, 0, 1,
                                                     &m_DescriptorSets[imageIndex], 0, nullptr);
 
-    m_CommandBuffers[imageIndex].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+//    m_CommandBuffers[imageIndex].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
     m_CommandBuffers[imageIndex].draw(static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 

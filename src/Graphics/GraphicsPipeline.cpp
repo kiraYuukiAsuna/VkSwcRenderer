@@ -44,7 +44,7 @@ void GraphicsPipeline::create() {
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     vk::PipelineInputAssemblyStateCreateInfo assemblyStateCreateInfo;
-    assemblyStateCreateInfo.topology = vk::PrimitiveTopology::eTriangleList;
+    assemblyStateCreateInfo.topology = vk::PrimitiveTopology::ePointList;
     assemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
     vk::Viewport viewport;
@@ -149,8 +149,14 @@ void GraphicsPipeline::create() {
     pipelineCreateInfo.basePipelineIndex = -1;
 
     if (m_Application->m_GraphicsDevice.m_Device.createGraphicsPipelines(nullptr, 1, &pipelineCreateInfo, nullptr,
-                                                                         &m_GraphicsPipeline) != vk::Result::eSuccess) {
-        SEELE_ERROR_TAG(__func__, "Create Graphics Pipeline Failed!");
+                                                                         &m_SwcNodePipeline) != vk::Result::eSuccess) {
+        SEELE_ERROR_TAG(__func__, "Create SwcNode Graphics Pipeline Failed!");
+    }
+
+    assemblyStateCreateInfo.topology = vk::PrimitiveTopology::eLineList;
+    if (m_Application->m_GraphicsDevice.m_Device.createGraphicsPipelines(nullptr, 1, &pipelineCreateInfo, nullptr,
+                                                                         &m_SwcConnectLinePipeline) != vk::Result::eSuccess) {
+        SEELE_ERROR_TAG(__func__, "Create SwcConnectLine Graphics Pipeline Failed!");
     }
 
     m_Application->m_GraphicsDevice.m_Device.destroyShaderModule(vertShaderModule);
@@ -159,7 +165,7 @@ void GraphicsPipeline::create() {
 
 void GraphicsPipeline::cleanup() {
     m_Application->m_GraphicsDevice.m_Device.destroyDescriptorSetLayout(m_DescriptorSetLayout, nullptr);
-    m_Application->m_GraphicsDevice.m_Device.destroyPipeline(m_GraphicsPipeline, nullptr);
+    m_Application->m_GraphicsDevice.m_Device.destroyPipeline(m_SwcNodePipeline, nullptr);
     m_Application->m_GraphicsDevice.m_Device.destroyPipelineLayout(m_PipelineLayout, nullptr);
     m_Application->m_GraphicsDevice.m_Device.destroyRenderPass(m_RenderPass, nullptr);
 }

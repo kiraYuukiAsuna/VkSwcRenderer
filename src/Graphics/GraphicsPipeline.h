@@ -20,7 +20,8 @@ public:
     void cleanup();
 
     vk::RenderPass m_RenderPass;
-    vk::Pipeline m_GraphicsPipeline;
+    vk::Pipeline m_SwcNodePipeline;
+    vk::Pipeline m_SwcConnectLinePipeline;
 
     vk::DescriptorSetLayout m_DescriptorSetLayout;
 
