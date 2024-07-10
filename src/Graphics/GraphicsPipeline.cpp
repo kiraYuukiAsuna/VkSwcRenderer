@@ -17,8 +17,8 @@ void GraphicsPipeline::create() {
     auto vertShaderModule = ShaderCode::createShaderModule(vertShaderCode, m_Application->m_GraphicsDevice.m_Device);
     auto fragShaderModule = ShaderCode::createShaderModule(fragShaderCode, m_Application->m_GraphicsDevice.m_Device);
 
-    SEELE_INFO("Vertex Shader Code Size: {0}", vertShaderCode.size());
-    SEELE_INFO("Fragment Shader Code Size: {0}", fragShaderCode.size());
+    SeeleInfo("Vertex Shader Code Size: {0}", vertShaderCode.size());
+    SeeleInfo("Fragment Shader Code Size: {0}", fragShaderCode.size());
 
     vk::PipelineShaderStageCreateInfo vertShaderStageInfo;
     vertShaderStageInfo.stage = vk::ShaderStageFlagBits::eVertex;
@@ -128,7 +128,7 @@ void GraphicsPipeline::create() {
 
     if (m_Application->m_GraphicsDevice.m_Device.createPipelineLayout(&pipelineLayoutCreateInfo, nullptr,
                                                                       &m_PipelineLayout) != vk::Result::eSuccess) {
-        SEELE_ERROR_TAG(__func__, "Create Pipeline Layout Failed!");
+        SeeleErrorTag(__func__, "Create Pipeline Layout Failed!");
     }
 
     vk::GraphicsPipelineCreateInfo pipelineCreateInfo;
@@ -150,13 +150,13 @@ void GraphicsPipeline::create() {
 
     if (m_Application->m_GraphicsDevice.m_Device.createGraphicsPipelines(nullptr, 1, &pipelineCreateInfo, nullptr,
                                                                          &m_SwcNodePipeline) != vk::Result::eSuccess) {
-        SEELE_ERROR_TAG(__func__, "Create SwcNode Graphics Pipeline Failed!");
+        SeeleErrorTag(__func__, "Create SwcNode Graphics Pipeline Failed!");
     }
 
     assemblyStateCreateInfo.topology = vk::PrimitiveTopology::eLineList;
     if (m_Application->m_GraphicsDevice.m_Device.createGraphicsPipelines(nullptr, 1, &pipelineCreateInfo, nullptr,
                                                                          &m_SwcConnectLinePipeline) != vk::Result::eSuccess) {
-        SEELE_ERROR_TAG(__func__, "Create SwcConnectLine Graphics Pipeline Failed!");
+        SeeleErrorTag(__func__, "Create SwcConnectLine Graphics Pipeline Failed!");
     }
 
     m_Application->m_GraphicsDevice.m_Device.destroyShaderModule(vertShaderModule);
@@ -210,7 +210,7 @@ void GraphicsPipeline::createRenderPass() {
 
     if (m_Application->m_GraphicsDevice.m_Device.createRenderPass(&renderPassCreateInfo, nullptr, &m_RenderPass) !=
         vk::Result::eSuccess) {
-        SEELE_ERROR_TAG(__func__, "Create Render Pass Failed!");
+        SeeleErrorTag(__func__, "Create Render Pass Failed!");
     }
 
 }

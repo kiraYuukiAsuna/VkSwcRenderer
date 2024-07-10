@@ -7,15 +7,21 @@
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include <iostream>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 
-#include "Util/Logger/Log.h"
 #include "Graphics/GraphicsDevice.h"
 #include "Graphics/WindowSurface.h"
 #include "Graphics/SwapChain.h"
 #include "Graphics/GraphicsPipeline.h"
 #include "Graphics/CommandBuffer.h"
+
+// 全局变量来存储变换信息
+extern float scale;
+extern float rotation;
+extern float positionX;
+extern float positionY;
 
 class Application {
 public:
@@ -73,8 +79,6 @@ public:
 private:
     Application();
 
-    void initializeLogger();
-
     void initializeWindow();
 
     void initializeVulkan();
@@ -103,6 +107,52 @@ private:
                                        const VkAllocationCallbacks *pAllocator);
 
     static void framebufferResizeCallback(GLFWwindow *window, int width, int height);
+
+
+
+    // 键盘事件处理
+    static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+        if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+            switch (key) {
+                case GLFW_KEY_UP:
+                    positionY += 0.1f;
+                break;
+                case GLFW_KEY_DOWN:
+                    positionY -= 0.1f;
+                break;
+                case GLFW_KEY_LEFT:
+                    positionX -= 0.1f;
+                break;
+                case GLFW_KEY_RIGHT:
+                    positionX += 0.1f;
+                break;
+                case GLFW_KEY_A:
+                    rotation += 5.0f;
+                break;
+                case GLFW_KEY_D:
+                    rotation -= 5.0f;
+                break;
+                case GLFW_KEY_W:
+                    scale *= 1.1f;
+                break;
+                case GLFW_KEY_S:
+                    scale /= 1.1f;
+                break;
+                case GLFW_KEY_ESCAPE:
+                    glfwSetWindowShouldClose(window, GLFW_TRUE);
+                break;
+            }
+        }
+    }
+
+    // 鼠标事件处理
+    static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+            double xpos, ypos;
+            glfwGetCursorPos(window, &xpos, &ypos);
+            std::cout << "Mouse Position at (" << xpos << " : " << ypos << ")\n";
+        }
+    }
 
     int m_WindowWidth{1200};
     int m_WindowHeight{800};

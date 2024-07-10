@@ -11,13 +11,37 @@ void SwcObject::load(const std::string&filePath) {
 
     ESwc swc(filePath);
     swc.ReadFromFile();
+    float minValX=std::numeric_limits<float>::max(), maxValX=std::numeric_limits<float>::min();
+    float minValY=std::numeric_limits<float>::max(), maxValY=std::numeric_limits<float>::min();
+    float minValZ=std::numeric_limits<float>::max(), maxValZ=std::numeric_limits<float>::min();
 
     auto units = swc.getValue();
     for (auto&unit: units) {
+        if (unit.x < minValX) {
+            minValX = unit.x;
+        }
+        if (unit.x > maxValX) {
+            maxValX = unit.x;
+        }
+        if (unit.y < minValY) {
+            minValY = unit.y;
+        }
+        if (unit.y > maxValY) {
+            maxValY = unit.y;
+        }
+        if (unit.z < minValZ) {
+            minValZ = unit.z;
+        }
+        if (unit.z > maxValZ) {
+            maxValZ = unit.z;
+        }
+    }
+
+    for (auto& unit : units) {
         SwcData data{
             unit.n,
             unit.type,
-            glm::vec3{unit.x, unit.y , unit.z},
+            glm::vec3{(unit.x - minValX) / (maxValX - minValX), (unit.y - minValY) / (maxValY - minValY), (unit.z - minValZ) / (maxValZ - minValZ)},
             unit.radius,
             unit.parent,
             glm::vec3{0.0f, 1.0f, 1.0f}

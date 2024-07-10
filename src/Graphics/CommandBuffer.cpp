@@ -21,7 +21,8 @@ void CommandBuffer::CreateCommandPool() {
 
 void CommandBuffer::cleanupCommandBuffer() {
     m_Application->m_GraphicsDevice.m_Device.freeCommandBuffers(ObjectManager::getInstance().m_CommandPool,
-                                                                static_cast<uint32_t>(ObjectManager::getInstance().m_CommandBuffers.size()),
+                                                                static_cast<uint32_t>(ObjectManager::getInstance().
+                                                                    m_CommandBuffers.size()),
                                                                 ObjectManager::getInstance().m_CommandBuffers.data());
 }
 
@@ -39,10 +40,11 @@ void CommandBuffer::createCommandBuffers() {
     allocInfo.level = vk::CommandBufferLevel::ePrimary;
     allocInfo.commandBufferCount = static_cast<uint32_t>(ObjectManager::getInstance().m_CommandBuffers.size());
 
-    ObjectManager::getInstance().m_CommandBuffers = m_Application->m_GraphicsDevice.m_Device.allocateCommandBuffers(allocInfo);
+    ObjectManager::getInstance().m_CommandBuffers = m_Application->m_GraphicsDevice.m_Device.
+            allocateCommandBuffers(allocInfo);
 }
 
-void CommandBuffer::recordCommandBuffers(uint32_t imageIndex, std::vector<vk::DescriptorSet>& descriptorSets) {
+void CommandBuffer::recordCommandBuffers(uint32_t imageIndex, std::vector<vk::DescriptorSet>&descriptorSets) {
     vk::CommandBufferBeginInfo beginInfo;
     beginInfo.flags = vk::CommandBufferUsageFlagBits::eSimultaneousUse;
     beginInfo.pInheritanceInfo = nullptr;
@@ -60,11 +62,12 @@ void CommandBuffer::recordCommandBuffers(uint32_t imageIndex, std::vector<vk::De
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;
 
-    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-    //
-    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindPipeline(vk::PipelineBindPoint::eGraphics,
-    //                                           m_Application->m_GraphicsPipeline.m_SwcNodePipeline);
+    ObjectManager::getInstance().m_CommandBuffers[imageIndex].beginRenderPass(
+        renderPassInfo, vk::SubpassContents::eInline);
 
+    ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindPipeline(vk::PipelineBindPoint::eGraphics,
+                                                                           m_Application->m_GraphicsPipeline.
+                                                                           m_SwcNodePipeline);
 
 
     vk::Viewport viewport{};
@@ -75,66 +78,69 @@ void CommandBuffer::recordCommandBuffers(uint32_t imageIndex, std::vector<vk::De
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
-    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].setViewport(0, 1, &viewport);
+    ObjectManager::getInstance().m_CommandBuffers[imageIndex].setViewport(0, 1, &viewport);
 
     vk::Rect2D scissor{};
     scissor.offset.setX(0);
     scissor.offset.setY(0);
     scissor.extent = m_Application->m_SwapChain.m_SwapChainExtent;
-    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].setScissor(0, 1, &scissor);
-
-    // vk::Buffer pointVertexBuffers[] = {ObjectManager::getInstance().m_PointVertexBuffer};
-    // vk::DeviceSize pointOffsets[] = {0};
-    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindVertexBuffers(0, 1, pointVertexBuffers, pointOffsets);
-    //
-    // //    ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
-    //
-    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-    //                                                 m_Application->m_GraphicsPipeline.m_PipelineLayout, 0, 1,
-    //                                                 &descriptorSets[imageIndex], 0, nullptr);
-    //
-    // //    ObjectManager::getInstance().m_CommandBuffers[imageIndex].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
-    //
-    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].draw(static_cast<uint32_t>(ObjectManager::getInstance().pointVertices.size()), 1, 0,
-    //                                   0);
-    //
-    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].endRenderPass();
-
-
-    vk::Buffer lineVertexBuffers[] = {ObjectManager::getInstance().m_LineVertexBuffer};
-    vk::DeviceSize lineOffsets[] = {0};
-
-     ObjectManager::getInstance().m_CommandBuffers[imageIndex].beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-
-    ObjectManager::getInstance().draw();
-    ObjectManager::getInstance().updateUniformBuffer(imageIndex);
-
-    ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindPipeline(vk::PipelineBindPoint::eGraphics,
-                                              m_Application->m_GraphicsPipeline.m_SwcConnectLinePipeline);
-
-    ObjectManager::getInstance().m_CommandBuffers[imageIndex].setViewport(0, 1, &viewport);
-
     ObjectManager::getInstance().m_CommandBuffers[imageIndex].setScissor(0, 1, &scissor);
 
-    ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindVertexBuffers(0, 1, lineVertexBuffers, lineOffsets);
+    ObjectManager::getInstance().draw(imageIndex);
 
-    //    ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindIndexBuffer(m_IndexBuffer, 0, vk::IndexType::eUint32);
+    vk::Buffer pointVertexBuffers[] = {ObjectManager::getInstance().m_PointVertexBuffer};
+    vk::DeviceSize pointOffsets[] = {0};
+    ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindVertexBuffers(0, 1, pointVertexBuffers, pointOffsets);
+
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindIndexBuffer(
+    //     ObjectManager::getInstance().m_PointIndexBuffer, 0, vk::IndexType::eUint32);
 
     ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
-                                                    m_Application->m_GraphicsPipeline.m_PipelineLayout, 0, 1,
-                                                    &descriptorSets[imageIndex], 0, nullptr);
+        m_Application->m_GraphicsPipeline.m_PipelineLayout, 0, 1,
+        &descriptorSets[imageIndex], 0, nullptr);
 
-    //    ObjectManager::getInstance().m_CommandBuffers[imageIndex].drawIndexed(static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].drawIndexed(
+    //     static_cast<uint32_t>(ObjectManager::getInstance().pointVertices.size()), 1, 0, 0, 0);
 
-    ObjectManager::getInstance().m_CommandBuffers[imageIndex].draw(static_cast<uint32_t>(ObjectManager::getInstance().lineVertices.size()), 1, 0,
-                                      0);
+    ObjectManager::getInstance().m_CommandBuffers[imageIndex].draw(
+        static_cast<uint32_t>(ObjectManager::getInstance().pointVertices.size()), 1, 0,
+        0);
 
     ObjectManager::getInstance().m_CommandBuffers[imageIndex].endRenderPass();
 
 
+    // vk::Buffer lineVertexBuffers[] = {ObjectManager::getInstance().m_LineVertexBuffer};
+    // vk::DeviceSize lineOffsets[] = {0};
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].beginRenderPass(
+    //     renderPassInfo, vk::SubpassContents::eInline);
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindPipeline(vk::PipelineBindPoint::eGraphics,
+    //                                                                        m_Application->m_GraphicsPipeline.
+    //                                                                        m_SwcConnectLinePipeline);
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].setViewport(0, 1, &viewport);
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].setScissor(0, 1, &scissor);
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindVertexBuffers(0, 1, lineVertexBuffers, lineOffsets);
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindIndexBuffer(
+    //     ObjectManager::getInstance().m_LineIndexBuffer, 0, vk::IndexType::eUint32);
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].bindDescriptorSets(vk::PipelineBindPoint::eGraphics,
+    //     m_Application->m_GraphicsPipeline.m_PipelineLayout, 0, 1,
+    //     &descriptorSets[imageIndex], 0, nullptr);
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].drawIndexed(
+    //     static_cast<uint32_t>(ObjectManager::getInstance().lineVertices.size()), 1, 0, 0, 0);
+    //
+    // // ObjectManager::getInstance().m_CommandBuffers[imageIndex].draw(
+    // //     static_cast<uint32_t>(ObjectManager::getInstance().lineVertices.size()), 1, 0,
+    // //     0);
+    //
+    // ObjectManager::getInstance().m_CommandBuffers[imageIndex].endRenderPass();
+
+
     ObjectManager::getInstance().m_CommandBuffers[imageIndex].end();
-
-
-    // ObjectManager::getInstance().endDraw();
-
 }

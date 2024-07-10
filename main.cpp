@@ -1,8 +1,11 @@
 #include "Object/ObjectManager.h"
 #include "Object/SwcObject.h"
 #include "UI/Application.h"
+#include "Util/Logger/Log.h"
 
 int main() {
+    Seele::Log::Init();
+
     auto& app = Application::getInstance();
 
     SwcObject swcObject;
@@ -12,9 +15,9 @@ int main() {
     try {
         app.run();
     } catch (std::exception &e) {
-        SEELE_ERROR_TAG(__func__, "{}", e.what());
+        SeeleErrorTag(__func__, "{}", e.what());
         return -1;
     }
 
-    return 0;
+    Seele::Log::Shutdown();
 }

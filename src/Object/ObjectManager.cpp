@@ -133,6 +133,8 @@ void ObjectManager::createUniformBuffers(std::vector<vk::Buffer>&uniformBuffer,
     }
 }
 
+
+
 void ObjectManager::updateUniformBuffer(uint32_t currentImage) {
     static auto startTime = std::chrono::high_resolution_clock::now();
 
@@ -140,18 +142,27 @@ void ObjectManager::updateUniformBuffer(uint32_t currentImage) {
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
     UniformBufferObject ubo{};
-    // ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
-    //                         glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.model = glm::mat4(1.0f);
+
+    // 应用平移
+    ubo.model = glm::translate(ubo.model, glm::vec3(positionX, positionY, 0.0));
+
+    // 应用旋转
+    ubo.model = glm::rotate(ubo.model, glm::radians(rotation), glm::vec3(0.0f, 0.0f, 1.0f));
+
+    // 应用缩放
+    ubo.model = glm::scale(ubo.model, glm::vec3(scale, scale, scale));
+
     // View matrix
-    glm::vec3 cameraPos = glm::vec3(8000.0f, 4000.0f, -14490.0f);
-    glm::vec3 targetPos = glm::vec3(8000.0f, 4000.0f, 1.0f);
+    glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, -10.0f);
+    glm::vec3 targetPos = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
     ubo.view = glm::lookAt(cameraPos, targetPos, upVector);
 
     // Projection matrix
     float fov = glm::radians(45.0f);
-    float aspect = static_cast<float>(Application::getInstance().m_SwapChain.m_SwapChainExtent.width) / (float)Application::getInstance().m_SwapChain.m_SwapChainExtent.height; // replace windowWidth and windowHeight with your actual window size
+    float aspect = static_cast<float>(Application::getInstance().m_SwapChain.m_SwapChainExtent.width) /
+                   static_cast<float>(Application::getInstance().m_SwapChain.m_SwapChainExtent.height);
     float nearPlane = 1.0f;
     float farPlane = 20000.0f;
     ubo.proj = glm::perspective(fov, aspect, nearPlane, farPlane);
@@ -159,16 +170,22 @@ void ObjectManager::updateUniformBuffer(uint32_t currentImage) {
     ubo.proj[1][1] *= -1;
 
     void* data = Application::getInstance().m_GraphicsDevice.m_Device.mapMemory(m_UniformBuffersMemory[currentImage], 0,
-        sizeof(ubo));
+                                                                                sizeof(ubo));
     memcpy(data, &ubo, sizeof(ubo));
     Application::getInstance().m_GraphicsDevice.m_Device.unmapMemory(m_UniformBuffersMemory[currentImage]);
 }
 
 ObjectManager::~ObjectManager() {
-
 }
 
 ObjectManager::ObjectManager() {
+
+}
+
+void ObjectManager::createResource() {
+    createUniformBuffers(m_UniformBuffers, m_UniformBuffersMemory);
+    createDescriptorPool();
+    createDescriptorSets();
 }
 
 void ObjectManager::createDescriptorPool() {

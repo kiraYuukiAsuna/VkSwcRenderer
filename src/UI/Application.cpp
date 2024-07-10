@@ -1,6 +1,13 @@
 #include "Application.h"
 
 #include "Object/ObjectManager.h"
+#include <backward.hpp>
+
+
+float scale = 1.0f;
+float rotation = 0.0f;
+float positionX = 0.0f;
+float positionY = 0.0f;
 
 Application::Application() : m_GraphicsDevice(this), m_WindowSurface(this), m_SwapChain(this),
                              m_GraphicsPipeline(this), m_CommandBuffer(this) {
@@ -31,14 +38,9 @@ Application::~Application() {
 }
 
 void Application::run() {
-    initializeLogger();
     initializeWindow();
     initializeVulkan();
     startMainLoop();
-}
-
-void Application::initializeLogger() {
-    Seele::Log::Init();
 }
 
 void Application::initializeWindow() {
@@ -47,6 +49,8 @@ void Application::initializeWindow() {
     m_GLFWwindow = glfwCreateWindow(m_WindowWidth, 800, "VkSwcRenderer", nullptr, nullptr);
     glfwSetWindowUserPointer(m_GLFWwindow, this);
     glfwSetFramebufferSizeCallback(m_GLFWwindow, framebufferResizeCallback);
+    glfwSetKeyCallback(m_GLFWwindow, key_callback);
+    glfwSetMouseButtonCallback(m_GLFWwindow, mouse_button_callback);
 }
 
 void Application::initializeVulkan() {
@@ -73,6 +77,9 @@ void Application::initializeVulkan() {
     m_CommandBuffer.createCommandBuffers();
 
     createSyncObjects();
+
+
+    ObjectManager::getInstance().createResource();
 }
 
 void Application::startMainLoop() {
@@ -95,7 +102,7 @@ void Application::createVulkanInstance() {
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "No Engine";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 275);
     appInfo.pNext = nullptr;
 
     VkInstanceCreateInfo createInfo;
@@ -135,14 +142,14 @@ bool Application::checkValidationLayerSupport() {
 
         for (const auto&layerProperties: availableLayers) {
             if (strcmp(layerName, layerProperties.layerName) == 0) {
-                SEELE_INFO_TAG(__func__, "Found {}", layerName);
+                SeeleInfoTag(__func__, "Found {}", layerName);
                 layerFound = true;
                 break;
             }
         }
 
         if (!layerFound) {
-            SEELE_ERROR_TAG(__func__, "Cannot Found {}", layerName);
+            SeeleErrorTag(__func__, "Cannot Found {}", layerName);
             return false;
         }
     }
@@ -167,16 +174,16 @@ std::vector<const char *> Application::getRequiredExtensions() {
     std::vector<VkExtensionProperties> availableExtensions(availableExtensionsCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &availableExtensionsCount, availableExtensions.data());
 
-    SEELE_INFO_TAG(__func__, "{} Available Extensions Supported:", availableExtensions.size());
+    SeeleInfoTag(__func__, "{} Available Extensions Supported:", availableExtensions.size());
     for (const auto&extension: availableExtensions) {
-        SEELE_INFO_TAG(__func__, "{}", extension.extensionName);
+        SeeleInfoTag(__func__, "{}", extension.extensionName);
     }
     for (auto&requiredExtension: requiredExtensions) {
         bool layerFound = false;
 
         for (auto&availableExtension: availableExtensions) {
             if (strcmp(availableExtension.extensionName, requiredExtension) == 0) {
-                SEELE_INFO_TAG(__func__, "Found {}", availableExtension.extensionName);
+                SeeleInfoTag(__func__, "Found {}", availableExtension.extensionName);
                 layerFound = true;
                 break;
             }
@@ -240,7 +247,17 @@ VkBool32 Application::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messa
                                     VkDebugUtilsMessageTypeFlagsEXT messageType,
                                     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-        SEELE_WARN_TAG(__func__, "Validation Layer: {}", pCallbackData->pMessage);
+        SeeleWarnTag(__func__, "Validation Layer: {}", pCallbackData->pMessage);
+
+        // backward::StackTrace st;
+        // st.load_here(32);
+        // backward::Printer printer;
+        // printer.address = true;
+        //
+        // std::stringstream ss;
+        // printer.print(st, ss);
+        // SeeleInfoTag("StaackTrace", "{}", ss.str());
+        // Seele::Log::Flush();
     }
     return VK_FALSE;
 }
@@ -266,6 +283,16 @@ void Application::drawFrame() {
     if (m_GraphicsDevice.m_Device.resetFences(1, &m_InFlightFences[currentFrame]) != vk::Result::eSuccess) {
         throw std::runtime_error("Failed to reset fence");
     }
+
+    // if (imageIndex == 0) {
+    //     ObjectManager::getInstance().endDraw(2);
+    // }
+    // else if (imageIndex == 1) {
+    //     ObjectManager::getInstance().endDraw(0);
+    // }
+    // else if (imageIndex == 2) {
+    //     ObjectManager::getInstance().endDraw(1);
+    // }
 
     m_CommandBuffer.recordCommandBuffers(imageIndex, ObjectManager::getInstance().m_DescriptorSets);
 

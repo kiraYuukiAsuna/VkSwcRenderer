@@ -5,6 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 include_directories(
         ThirdParty/glfw/include
         ThirdParty/glm/include
@@ -13,6 +15,9 @@ include_directories(
         ThirdParty/imgui-1.90.4
         ~/SDK/vulkan/1.3.275.0/x86_64/include
         C:/VulkanSDK/1.3.275.0/Include
+        src/Util/Logger
+        ThirdParty/backward
+        ThirdParty/fmt/include
         src
 )
 
@@ -44,6 +49,7 @@ set(CPP_SOURCE
         main.cpp
 
         src/Util/Logger/Log.cpp
+        src/Util/Logger/backward.cpp
         ThirdParty/imgui-1.90.4/imgui.cpp
         ThirdParty/imgui-1.90.4/imgui_draw.cpp
         ThirdParty/imgui-1.90.4/imgui_demo.cpp
